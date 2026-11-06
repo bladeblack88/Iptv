@@ -1,0 +1,674 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Русское IPTV для iPad</title>
+
+<style>
+* {
+ box-sizing: border-box;
+}
+
+body {
+ margin: 0;
+ padding: 0;
+ background: #0b1020;
+ color: white;
+ font-family: Arial, sans-serif;
+ -webkit-text-size-adjust: 100%;
+}
+
+header {
+ background: #151f35;
+ padding: 15px;
+}
+
+h1 {
+ font-size: 21px;
+ margin: 0 0 12px 0;
+}
+
+button, input, select {
+ font-size: 16px;
+ padding: 12px;
+ border-radius: 9px;
+ border: 1px solid #34435e;
+ background: #1b2942;
+ color: white;
+ -webkit-appearance: none;
+}
+
+button {
+ cursor: pointer;
+}
+
+.controls {
+ display: block;
+}
+
+.controls button {
+ margin: 3px;
+}
+
+main {
+ max-width: 1100px;
+ margin: auto;
+ padding: 12px;
+}
+
+.panel {
+ background: #151f35;
+ border-radius: 12px;
+ padding: 12px;
+ margin-bottom: 15px;
+ width: 100%;
+}
+
+video {
+ display: block;
+ width: 100%;
+ height: auto;
+ min-height: 180px;
+ background: black;
+ border-radius: 9px;
+}
+
+#current {
+ font-size: 18px;
+}
+
+#status {
+ color: #85d9a9;
+ font-size: 14px;
+}
+
+#search {
+ width: 100%;
+ margin-bottom: 8px;
+}
+
+#category {
+ width: 100%;
+ margin-bottom: 8px;
+}
+
+#channels {
+ max-height: 420px;
+ overflow-y: auto;
+ -webkit-overflow-scrolling: touch;
+ margin-top: 10px;
+}
+
+.channel {
+ display: block;
+ width: 100%;
+ min-height: 62px;
+ padding: 8px;
+ margin-bottom: 6px;
+ text-align: left;
+ border: 1px solid transparent;
+ background: #1b2942;
+ overflow: hidden;
+}
+
+.channel.active {
+ background: #29436a;
+ border-color: #669cff;
+}
+
+.channel img {
+ width: 40px;
+ height: 40px;
+ object-fit: contain;
+ background: #0b1020;
+ border-radius: 6px;
+ float: left;
+ margin-right: 10px;
+}
+
+.info {
+ overflow: hidden;
+}
+
+.name {
+ font-weight: bold;
+ font-size: 15px;
+ margin-top: 4px;
+}
+
+.group {
+ font-size: 12px;
+ color: #aab9d2;
+ margin-top: 4px;
+}
+
+.star {
+ float: right;
+ color: #ffd166;
+ font-size: 23px;
+ padding: 5px;
+}
+
+#updated {
+ color: #9aa8c2;
+ font-size: 12px;
+}
+
+@media (min-width: 800px) {
+ .layout {
+  overflow: hidden;
+ }
+
+ .panel {
+  float: left;
+  width: 49%;
+  margin-right: 1%;
+ }
+
+ #channels {
+  max-height: 550px;
+ }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <h1>📺 Русское IPTV</h1>
+
+ <div class="controls">
+  <button id="refresh">↻ Обновить</button>
+  <button id="favoritesButton">☆ Избранное</button>
+ </div>
+</header>
+
+<main>
+ <div class="layout">
+
+  <section class="panel">
+
+   <video id="video" controls playsinline
+    webkit-playsinline preload="none">
+   </video>
+
+   <h3 id="current">Выберите телеканал</h3>
+
+   <div id="status">Ожидание канала</div>
+
+  </section>
+
+  <section class="panel">
+
+   <h3>Список каналов</h3>
+
+   <input id="search"
+    type="search"
+    placeholder="Поиск канала...">
+
+   <select id="category">
+    <option value="">Все категории</option>
+   </select>
+
+   <div id="channels">Загрузка каналов...</div>
+
+   <p id="updated"></p>
+
+  </section>
+
+ </div>
+</main>
+
+<script type="text/javascript">
+
+/* IPTV playlist */
+
+var PLAYLIST =
+ "https://iptv-org.github.io/iptv/languages/rus.m3u";
+
+var channels = [];
+var favorites = [];
+var favoritesOnly = false;
+var activeUrl = "";
+
+var video = document.getElementById("video");
+var statusText = document.getElementById("status");
+
+/* Load favorites */
+
+try {
+ favorites = JSON.parse(
+  localStorage.getItem("iptvFavorites") || "[]"
+ );
+
+ if (!Array.isArray(favorites)) {
+  favorites = [];
+ }
+} catch(e) {
+ favorites = [];
+}
+
+/* Read M3U attributes */
+
+function getAttribute(line, name) {
+
+ var regex = new RegExp(
+  name + '="([^"]*)"', "i"
+ );
+
+ var match = line.match(regex);
+
+ return match ? match[1] : "";
+}
+
+/* Parse playlist */
+
+function parseM3U(data) {
+
+ var lines = data.split(/\r?\n/);
+ var result = [];
+ var info = null;
+ var i;
+
+ for (i = 0; i < lines.length; i++) {
+
+  var s = lines[i].replace(/^\s+|\s+$/g, "");
+
+  if (s.indexOf("#EXTINF:") === 0) {
+
+   info = s;
+
+  } else if (
+   s !== "" &&
+   s.charAt(0) !== "#" &&
+   info
+  ) {
+
+   var comma = info.indexOf(",");
+
+   result.push({
+
+    name: comma >= 0 ?
+     info.substring(comma + 1).replace(/^\s+|\s+$/g, "") :
+     "Без названия",
+
+    url: s,
+
+    group:
+     getAttribute(info, "group-title") ||
+     "Без категории",
+
+    logo:
+     getAttribute(info, "tvg-logo")
+
+   });
+
+   info = null;
+  }
+ }
+
+ return result;
+}
+
+/* Load playlist using old Safari compatible XHR */
+
+function loadPlaylist() {
+
+ statusText.textContent = "Обновление списка...";
+
+ var xhr = new XMLHttpRequest();
+
+ xhr.open("GET", PLAYLIST, true);
+ xhr.timeout = 30000;
+
+ xhr.onreadystatechange = function() {
+
+  if (xhr.readyState !== 4) {
+   return;
+  }
+
+  if (xhr.status >= 200 && xhr.status < 300) {
+
+   var parsed = parseM3U(xhr.responseText);
+
+   if (parsed.length === 0) {
+
+    statusText.textContent = "Плейлист пуст";
+    return;
+
+   }
+
+   channels = parsed;
+
+   updateCategories();
+   renderChannels();
+
+   document.getElementById("updated").textContent =
+    "Обновлено: " +
+    new Date().toLocaleString("ru-RU") +
+    " · Каналов: " + channels.length;
+
+   statusText.textContent = "Список каналов обновлён";
+
+  } else {
+
+   statusText.textContent =
+    "Ошибка загрузки. HTTP " + xhr.status;
+
+  }
+ };
+
+ xhr.onerror = function() {
+
+  statusText.textContent =
+   "Ошибка интернета или доступа к плейлисту";
+
+ };
+
+ xhr.ontimeout = function() {
+
+  statusText.textContent = "Время ожидания истекло";
+
+ };
+
+ xhr.send(null);
+}
+
+/* Categories */
+
+function updateCategories() {
+
+ var select = document.getElementById("category");
+ var old = select.value;
+ var groups = [];
+ var i;
+
+ for (i = 0; i < channels.length; i++) {
+
+  if (groups.indexOf(channels[i].group) === -1) {
+   groups.push(channels[i].group);
+  }
+
+ }
+
+ groups.sort();
+
+ select.innerHTML =
+  '<option value="">Все категории</option>';
+
+ for (i = 0; i < groups.length; i++) {
+
+  var option = document.createElement("option");
+
+  option.value = groups[i];
+  option.textContent = groups[i];
+
+  select.appendChild(option);
+
+ }
+
+ select.value = old;
+}
+
+/* Render channel list */
+
+function renderChannels() {
+
+ var root = document.getElementById("channels");
+
+ var search = document.getElementById("search")
+  .value.toLowerCase();
+
+ var category = document.getElementById("category").value;
+
+ root.innerHTML = "";
+
+ var count = 0;
+ var i;
+
+ for (i = 0; i < channels.length; i++) {
+
+  var c = channels[i];
+
+  if (c.name.toLowerCase().indexOf(search) === -1) {
+   continue;
+  }
+
+  if (category && c.group !== category) {
+   continue;
+  }
+
+  if (
+   favoritesOnly &&
+   favorites.indexOf(c.url) === -1
+  ) {
+   continue;
+  }
+
+  count++;
+
+  var button = document.createElement("button");
+
+  button.className = "channel";
+
+  if (c.url === activeUrl) {
+   button.className += " active";
+  }
+
+  button.type = "button";
+
+  if (c.logo) {
+
+   var img = document.createElement("img");
+
+   img.src = c.logo;
+   img.alt = "";
+
+   img.onerror = function() {
+    this.style.display = "none";
+   };
+
+   button.appendChild(img);
+  }
+
+  var info = document.createElement("div");
+  info.className = "info";
+
+  var name = document.createElement("div");
+  name.className = "name";
+  name.textContent = c.name;
+
+  var group = document.createElement("div");
+  group.className = "group";
+  group.textContent = c.group;
+
+  info.appendChild(name);
+  info.appendChild(group);
+
+  button.appendChild(info);
+
+  var star = document.createElement("span");
+  star.className = "star";
+
+  star.textContent =
+   favorites.indexOf(c.url) !== -1 ? "★" : "☆";
+
+  star.onclick = (function(channel) {
+
+   return function(e) {
+
+    if (e && e.stopPropagation) {
+     e.stopPropagation();
+    }
+
+    toggleFavorite(channel.url);
+
+   };
+
+  })(c);
+
+  button.appendChild(star);
+
+  button.onclick = (function(channel) {
+
+   return function() {
+    playChannel(channel);
+   };
+
+  })(c);
+
+  root.appendChild(button);
+ }
+
+ if (count === 0) {
+
+  var empty = document.createElement("p");
+  empty.textContent = "Каналы не найдены";
+  root.appendChild(empty);
+
+ }
+}
+
+/* Favorites */
+
+function toggleFavorite(url) {
+
+ var index = favorites.indexOf(url);
+
+ if (index !== -1) {
+
+  favorites.splice(index, 1);
+
+ } else {
+
+  favorites.push(url);
+
+ }
+
+ try {
+  localStorage.setItem(
+   "iptvFavorites",
+   JSON.stringify(favorites)
+  );
+ } catch(e) {}
+
+ renderChannels();
+}
+
+function toggleFavorites() {
+
+ favoritesOnly = !favoritesOnly;
+
+ document.getElementById("favoritesButton").textContent =
+  favoritesOnly ? "★ Все каналы" : "☆ Избранное";
+
+ renderChannels();
+}
+
+/* Play channel using native iOS HLS */
+
+function playChannel(c) {
+
+ activeUrl = c.url;
+
+ document.getElementById("current").textContent = c.name;
+
+ statusText.textContent = "Подключение к каналу...";
+
+ renderChannels();
+
+ video.pause();
+
+ video.removeAttribute("src");
+
+ video.load();
+
+ /*
+  iPad mini 1:
+  Safari has native HLS support.
+  No hls.js required.
+ */
+
+ video.src = c.url;
+
+ video.load();
+
+ /*
+  play() is called directly after the user
+  selects a channel.
+ */
+
+ try {
+
+  video.play();
+
+  statusText.textContent =
+   "Запуск трансляции...";
+
+ } catch(e) {
+
+  statusText.textContent =
+   "Нажмите Play для запуска";
+
+ }
+}
+
+/* Video events */
+
+video.addEventListener("playing", function() {
+
+ statusText.textContent = "В эфире";
+
+}, false);
+
+video.addEventListener("waiting", function() {
+
+ statusText.textContent = "Загрузка трансляции...";
+
+}, false);
+
+video.addEventListener("error", function() {
+
+ statusText.textContent =
+  "Ошибка потока. Возможно, канал недоступен.";
+
+}, false);
+
+video.addEventListener("pause", function() {
+
+ if (video.currentSrc) {
+  statusText.textContent = "Пауза";
+ }
+
+}, false);
+
+/* Buttons and search */
+
+document.getElementById("refresh").onclick =
+ loadPlaylist;
+
+document.getElementById("favoritesButton").onclick =
+ toggleFavorites;
+
+document.getElementById("search").oninput =
+ renderChannels;
+
+document.getElementById("category").onchange =
+ renderChannels;
+
+/* Start */
+
+loadPlaylist();
+
+/* Refresh every 30 minutes */
+
+setInterval(loadPlaylist, 30 * 60 * 1000);
+
+</script>
+
+</body>
+</html>
