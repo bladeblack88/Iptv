@@ -3,908 +3,935 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="IPTV Россия">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>IPTV Россия</title>
 
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="IPTV Россия">
+
 <style>
 * {
- box-sizing:border-box;
- -webkit-tap-highlight-color:transparent;
+    box-sizing: border-box;
 }
 
-html,body {
- margin:0;
- width:100%;
- height:100%;
- background:#100b1d;
- color:#f5f0ff;
- font-family:Arial,sans-serif;
- overflow:hidden;
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
 }
 
-header {
- height:65px;
- padding:8px;
- text-align:center;
- background:linear-gradient(135deg,#6d28d9,#a855f7);
+#app {
+    display: flex;
+    width: 100%;
+    height: 100%;
 }
 
-header h1 {
- margin:0;
- font-size:23px;
+#left {
+    width: 65%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    background: #111;
 }
 
-header p {
- margin:4px;
- font-size:12px;
+#right {
+    width: 35%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #444;
+    background: #202020;
 }
 
-.app {
- height:calc(100% - 65px);
- padding:10px;
- display:flex;
- gap:10px;
-}
-
-.left {
- width:57%;
- display:flex;
- flex-direction:column;
- gap:9px;
- min-width:0;
-}
-
-.right {
- width:43%;
- background:#1d1530;
- border-radius:12px;
- padding:9px;
- display:flex;
- flex-direction:column;
- min-width:0;
- overflow:hidden;
-}
-
-.playerbox {
- background:#1d1530;
- padding:9px;
- border-radius:12px;
-}
-
-video {
- width:100%;
- height:auto;
- max-height:45vh;
- background:#000;
- border-radius:8px;
+#video {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    background: #000;
+    object-fit: contain;
 }
 
 #now {
- padding:9px 3px;
- font-weight:bold;
- color:#d8b4fe;
+    padding: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    min-height: 34px;
 }
 
 .controls {
- display:flex;
- flex-wrap:wrap;
- gap:6px;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 5px 0;
+    gap: 5px;
 }
 
 button {
- border:0;
- border-radius:8px;
- padding:10px 8px;
- color:white;
- font-size:12px;
- font-weight:bold;
- background:#6d28d9;
+    border: 0;
+    border-radius: 4px;
+    padding: 9px 12px;
+    background: #333;
+    color: #fff;
+    font-size: 13px;
 }
 
-.secondary {
- background:#291d40;
-}
-
-.stop {
- background:#be123c;
+button:active {
+    background: #666;
 }
 
 button:disabled {
- opacity:.4;
+    opacity: 0.4;
 }
 
-.search,select {
- width:100%;
- padding:10px;
- border:1px solid #493568;
- border-radius:8px;
- background:#1d1530;
- color:white;
- font-size:14px;
- margin-bottom:8px;
+#status {
+    padding: 5px;
+    font-size: 12px;
+    color: #bbb;
+    min-height: 25px;
 }
 
-.info {
- background:#1d1530;
- padding:10px;
- border-radius:9px;
- color:#aaa0bd;
- font-size:12px;
+#search {
+    width: 100%;
+    padding: 12px;
+    border: 0;
+    border-bottom: 1px solid #444;
+    background: #292929;
+    color: #fff;
+    font-size: 16px;
+    outline: none;
 }
 
-.progress-bg {
- height:6px;
- background:#38294f;
- margin-top:6px;
- border-radius:8px;
- overflow:hidden;
+#category {
+    width: 100%;
+    padding: 10px;
+    background: #292929;
+    color: #fff;
+    border: 0;
+    border-bottom: 1px solid #444;
+    font-size: 14px;
 }
 
-.progress {
- height:100%;
- width:0%;
- background:#a78bfa;
-}
-
-.list-title {
- font-weight:bold;
- margin-bottom:9px;
-}
-
-.channel-list {
- overflow-y:auto;
- -webkit-overflow-scrolling:touch;
- flex:1;
+#channelList {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .channel {
- display:flex;
- align-items:center;
- gap:8px;
- padding:8px;
- margin-bottom:6px;
- border-radius:9px;
- background:#291d40;
- border:1px solid transparent;
+    padding: 12px 10px;
+    border-bottom: 1px solid #383838;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .channel.active {
- border-color:#8b5cf6;
- background:#382650;
+    background: #075c9b;
 }
 
-.logo {
- width:38px;
- height:38px;
- object-fit:contain;
- background:white;
- border-radius:6px;
- padding:2px;
- flex-shrink:0;
+.channel.favorite {
+    color: #ffd45c;
 }
 
-.channel-info {
- flex:1;
- min-width:0;
+.channel.failed {
+    color: #ff7777;
 }
 
-.channel-name {
- font-size:13px;
- font-weight:bold;
- overflow-wrap:anywhere;
+.channel.unverified {
+    color: #ccc;
 }
 
-.channel-category {
- font-size:11px;
- color:#aaa0bd;
- margin-top:3px;
+.channelName {
+    display: block;
+    margin-bottom: 4px;
 }
 
-.channel-status {
- font-size:10px;
- margin-top:3px;
+.channelInfo {
+    font-size: 11px;
+    color: #aaa;
 }
 
-.star {
- font-size:22px;
- color:#facc15;
- padding:4px;
+#bottomInfo {
+    padding: 7px;
+    border-top: 1px solid #444;
+    font-size: 11px;
+    color: #aaa;
 }
 
-.empty {
- text-align:center;
- padding:20px;
- color:#aaa0bd;
-}
+@media screen and (orientation: portrait) {
+    #app {
+        flex-direction: column;
+    }
 
-.footer {
- font-size:10px;
- color:#aaa0bd;
- text-align:center;
- padding:5px;
-}
+    #left {
+        width: 100%;
+        height: 48%;
+    }
 
-/* Вертикальный экран */
+    #right {
+        width: 100%;
+        height: 52%;
+        border-left: 0;
+        border-top: 1px solid #444;
+    }
 
-@media (orientation:portrait) {
- .app {
-  flex-direction:column;
-  overflow:auto;
- }
-
- .left,.right {
-  width:100%;
-  flex-shrink:0;
- }
-
- .right {
-  height:45%;
-  min-height:230px;
- }
-
- video {
-  max-height:none;
- }
+    #video {
+        min-height: 100px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<header>
-<h1>💜 IPTV Россия</h1>
-<p>Телевидение онлайн</p>
-</header>
+<div id="app">
 
-<div class="app">
+    <div id="left">
 
-<!-- ЛЕВАЯ СТОРОНА: ПЛЕЕР -->
+        <video id="video"
+               controls
+               playsinline
+               webkit-playsinline>
+        </video>
 
-<div class="left">
+        <div id="now">Выберите канал</div>
 
-<div class="playerbox">
+        <div class="controls">
+            <button onclick="playPrevious()">◀</button>
+            <button onclick="playNext()">▶</button>
+            <button onclick="retryChannel()">Повтор</button>
+            <button onclick="toggleFavorite()">★ Избранное</button>
+        </div>
 
-<video id="video"
- controls
- playsinline
- webkit-playsinline>
-</video>
+        <div class="controls">
+            <button id="checkButton" onclick="startAutoCheck()">
+                Проверить каналы
+            </button>
 
-<div id="now">
-Выберите канал справа
-</div>
+            <button id="removeButton" onclick="removeFailedChannels()">
+                Удалить нерабочие
+            </button>
+        </div>
 
-</div>
+        <div class="controls">
+            <button onclick="showAllChannels()">Все каналы</button>
+            <button onclick="showFavorites()">Избранное</button>
+            <button onclick="restoreExcluded()">Сбросить исключения</button>
+        </div>
 
-<div class="controls">
+        <div id="status">Загрузка списка каналов...</div>
 
-<button onclick="loadPlaylist()">
-🔄 Обновить
-</button>
+    </div>
 
-<button class="secondary" onclick="toggleFavorites()">
-⭐ Избранное
-</button>
+    <div id="right">
 
-<button onclick="autoCheckAllStreams()" id="scanButton">
-🔍 Проверка
-</button>
+        <input id="search"
+               type="search"
+               placeholder="Поиск каналов..."
+               onkeyup="renderChannels()">
 
-<button class="stop" onclick="stopAutoCheck()" id="stopButton" disabled>
-⏹ Стоп
-</button>
+        <select id="category" onchange="renderChannels()">
+            <option value="all">Все категории</option>
+        </select>
 
-<button class="secondary" onclick="playNext()">
-⏭ Следующий
-</button>
+        <div id="channelList"></div>
 
-<button class="secondary" onclick="retryCurrent()">
-🔁 Повторить
-</button>
+        <div id="bottomInfo">
+            IPTV Россия
+        </div>
 
-</div>
-
-<div class="info">
-<div id="status">Загрузка каналов...</div>
-<div id="scanInfo"></div>
-
-<div class="progress-bg">
-<div class="progress" id="progress"></div>
-</div>
-</div>
-
-<div class="footer">
-Источник: IPTV-org
-</div>
-
-</div>
-
-<!-- ПРАВАЯ СТОРОНА: СПИСОК -->
-
-<div class="right">
-
-<div class="list-title">
-📺 Список каналов
-</div>
-
-<input
-class="search"
-id="search"
-type="search"
-placeholder="🔎 Поиск канала..."
-oninput="renderChannels()"
->
-
-<select id="category" onchange="renderChannels()">
-<option value="all">Все категории</option>
-</select>
-
-<div class="channel-list" id="channelList"></div>
-
-</div>
+    </div>
 
 </div>
 
 <script>
-
-/* НАСТРОЙКИ */
-
-var PLAYLIST_URL =
-"https://iptv-org.github.io/iptv/countries/ru.m3u";
+var playlistUrl =
+    "https://iptv-org.github.io/iptv/countries/ru.m3u";
 
 var channels = [];
-var activeIndex = -1;
 var favorites = [];
-var showFavorites = false;
+var excludedChannels = [];
 
-var autoCheckRunning = false;
-var scanIndex = 0;
-var scanTimer = null;
-var scanVideo = null;
-var scanToken = 0;
+var activeIndex = -1;
+var showOnlyFavorites = false;
+
+var checking = false;
+var checkIndex = 0;
+var checkTimer = null;
+var checkVideo = null;
+
+var activeUrl = null;
 
 var video = document.getElementById("video");
 
 try {
- favorites = JSON.parse(
-  localStorage.getItem("iptvFavorites") || "[]"
- );
+    favorites = JSON.parse(
+        localStorage.getItem("favorites") || "[]"
+    );
 
- if (!Array.isArray(favorites)) favorites = [];
-
-} catch(e) {
- favorites = [];
+    if (!Array.isArray(favorites)) {
+        favorites = [];
+    }
+} catch (e) {
+    favorites = [];
 }
+
+try {
+    excludedChannels = JSON.parse(
+        localStorage.getItem("excludedChannels") || "[]"
+    );
+
+    if (!Array.isArray(excludedChannels)) {
+        excludedChannels = [];
+    }
+} catch (e) {
+    excludedChannels = [];
+}
+
+
+/* СОХРАНЕНИЕ */
+
+function saveFavorites() {
+    try {
+        localStorage.setItem(
+            "favorites",
+            JSON.stringify(favorites)
+        );
+    } catch (e) {}
+}
+
+function saveExcludedChannels() {
+    try {
+        localStorage.setItem(
+            "excludedChannels",
+            JSON.stringify(excludedChannels)
+        );
+    } catch (e) {}
+}
+
+function isFavorite(url) {
+    return favorites.indexOf(url) !== -1;
+}
+
+function isExcluded(url) {
+    return excludedChannels.indexOf(url) !== -1;
+}
+
 
 /* ЗАГРУЗКА ПЛЕЙЛИСТА */
 
 function loadPlaylist() {
+    var xhr = new XMLHttpRequest();
 
- document.getElementById("status").innerHTML =
- "Загружаю список каналов...";
+    xhr.open("GET", playlistUrl, true);
+    xhr.timeout = 30000;
 
- var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
 
- xhr.open("GET", PLAYLIST_URL, true);
- xhr.timeout = 30000;
+            if (xhr.status === 200) {
 
- xhr.onreadystatechange = function() {
+                stopAutoCheck();
 
-  if (xhr.readyState === 4) {
+                channels = parseM3U(xhr.responseText);
 
-   if (xhr.status >= 200 && xhr.status < 300) {
+                removeExcludedFromPlaylist();
 
-    channels = parseM3U(xhr.responseText);
+                document.getElementById("status").textContent =
+                    "Загружено каналов: " + channels.length;
 
-    if (!channels.length) {
-     document.getElementById("status").innerHTML =
-     "Каналы не найдены";
-     return;
+            } else {
+                document.getElementById("status").textContent =
+                    "Ошибка загрузки плейлиста: " + xhr.status;
+            }
+        }
+    };
+
+    xhr.onerror = function() {
+        document.getElementById("status").textContent =
+            "Ошибка соединения";
+    };
+
+    xhr.ontimeout = function() {
+        document.getElementById("status").textContent =
+            "Время загрузки истекло";
+    };
+
+    xhr.send(null);
+}
+
+
+/* РАЗБОР M3U */
+
+function parseM3U(data) {
+    var lines = data.split(/\r?\n/);
+    var result = [];
+    var currentName = "";
+    var currentGroup = "Другие";
+
+    for (var i = 0; i < lines.length; i++) {
+
+        var line = lines[i].replace(/^\s+|\s+$/g, "");
+
+        if (line.indexOf("#EXTINF:") === 0) {
+
+            var comma = line.lastIndexOf(",");
+
+            currentName = comma >= 0
+                ? line.substring(comma + 1).replace(/^\s+|\s+$/g, "")
+                : "Без названия";
+
+            var groupMatch = line.match(/group-title="([^"]*)"/);
+
+            currentGroup = groupMatch && groupMatch[1]
+                ? groupMatch[1]
+                : "Другие";
+        }
+
+        else if (
+            line &&
+            line.charAt(0) !== "#" &&
+            line.indexOf("://") !== -1
+        ) {
+
+            result.push({
+                name: currentName || "Без названия",
+                group: currentGroup,
+                url: line,
+                checkStatus: "unverified"
+            });
+
+            currentName = "";
+            currentGroup = "Другие";
+        }
     }
+
+    return result;
+}
+
+
+/* ИСКЛЮЧЕНИЯ */
+
+function removeExcludedFromPlaylist() {
+
+    channels = channels.filter(function(channel) {
+        return !isExcluded(channel.url);
+    });
 
     buildCategories();
     renderChannels();
 
-    document.getElementById("status").innerHTML =
-    "Загружено каналов: " + channels.length;
-
-   } else {
-
-    document.getElementById("status").innerHTML =
-    "Ошибка загрузки: " + xhr.status;
-
-   }
-  }
- };
-
- xhr.onerror = function() {
-  document.getElementById("status").innerHTML =
-  "Ошибка интернет-соединения";
- };
-
- xhr.ontimeout = function() {
-  document.getElementById("status").innerHTML =
-  "Время ожидания истекло";
- };
-
- xhr.send(null);
+    if (channels.length === 0) {
+        stopPlayer();
+        activeIndex = -1;
+        updateNowPlaying();
+    }
 }
 
-/* ПАРСЕР M3U */
-
-function parseM3U(text) {
-
- var lines = text.split(/\r?\n/);
- var result = [];
- var current = null;
-
- for (var i = 0; i < lines.length; i++) {
-
-  var value = lines[i].replace(/^\s+|\s+$/g, "");
-
-  if (value.indexOf("#EXTINF:") === 0) {
-
-   var name = value.match(/,(.*)$/);
-   var logo = value.match(/tvg-logo="([^"]*)"/);
-   var group = value.match(/group-title="([^"]*)"/);
-
-   current = {
-    name: name ? name[1].trim() : "Без названия",
-    logo: logo ? logo[1] : "",
-    category: group ? group[1] : "Другие",
-    url: "",
-    checkStatus: "pending"
-   };
-
-  } else if (
-   value &&
-   value.charAt(0) !== "#" &&
-   current
-  ) {
-
-   current.url = value;
-   result.push(current);
-   current = null;
-
-  }
- }
-
- return result;
-}
 
 /* КАТЕГОРИИ */
 
 function buildCategories() {
+    var select = document.getElementById("category");
+    var groups = {};
 
- var select = document.getElementById("category");
+    for (var i = 0; i < channels.length; i++) {
+        groups[channels[i].group] = true;
+    }
 
- var categories = [];
- var seen = {};
+    select.innerHTML = '<option value="all">Все категории</option>';
 
- select.innerHTML =
- '<option value="all">Все категории</option>';
-
- for (var i = 0; i < channels.length; i++) {
-
-  var cat = channels[i].category;
-
-  if (!seen[cat]) {
-   seen[cat] = true;
-   categories.push(cat);
-  }
- }
-
- categories.sort();
-
- for (var j = 0; j < categories.length; j++) {
-
-  var option = document.createElement("option");
-
-  option.value = categories[j];
-  option.text = categories[j];
-
-  select.appendChild(option);
- }
+    for (var group in groups) {
+        if (groups.hasOwnProperty(group)) {
+            var option = document.createElement("option");
+            option.value = group;
+            option.appendChild(document.createTextNode(group));
+            select.appendChild(option);
+        }
+    }
 }
+
 
 /* СПИСОК КАНАЛОВ */
 
 function renderChannels() {
 
- var list = document.getElementById("channelList");
+    var list = document.getElementById("channelList");
+    var search = document.getElementById("search").value.toLowerCase();
+    var category = document.getElementById("category").value;
 
- var search =
- document.getElementById("search").value.toLowerCase();
+    list.innerHTML = "";
 
- var category =
- document.getElementById("category").value;
+    for (var i = 0; i < channels.length; i++) {
 
- list.innerHTML = "";
+        var channel = channels[i];
 
- var count = 0;
+        if (
+            showOnlyFavorites &&
+            !isFavorite(channel.url)
+        ) {
+            continue;
+        }
 
- for (var i = 0; i < channels.length; i++) {
+        if (
+            category !== "all" &&
+            channel.group !== category
+        ) {
+            continue;
+        }
 
-  var c = channels[i];
+        if (
+            search &&
+            channel.name.toLowerCase().indexOf(search) === -1
+        ) {
+            continue;
+        }
 
-  var match =
-   c.name.toLowerCase().indexOf(search) !== -1 &&
-   (category === "all" || c.category === category) &&
-   (!showFavorites || favorites.indexOf(c.url) !== -1);
+        var item = document.createElement("div");
+        item.className = "channel";
 
-  if (!match) continue;
+        if (i === activeIndex) {
+            item.className += " active";
+        }
 
-  count++;
+        if (isFavorite(channel.url)) {
+            item.className += " favorite";
+        }
 
-  var div = document.createElement("div");
+        if (channel.checkStatus === "failed") {
+            item.className += " failed";
+        }
 
-  div.className =
-  "channel" + (i === activeIndex ? " active" : "");
+        if (channel.checkStatus === "unverified") {
+            item.className += " unverified";
+        }
 
-  var img = document.createElement("img");
+        var name = document.createElement("span");
+        name.className = "channelName";
 
-  img.className = "logo";
-  img.src = c.logo || "";
-  img.alt = "";
+        name.appendChild(
+            document.createTextNode(
+                (isFavorite(channel.url) ? "★ " : "") +
+                channel.name
+            )
+        );
 
-  img.onerror = function() {
-   this.style.visibility = "hidden";
-  };
+        item.appendChild(name);
 
-  var info = document.createElement("div");
-  info.className = "channel-info";
+        var info = document.createElement("span");
+        info.className = "channelInfo";
 
-  var name = document.createElement("div");
-  name.className = "channel-name";
-  name.innerHTML = "";
+        info.appendChild(
+            document.createTextNode(
+                channel.group + " · " + channel.checkStatus
+            )
+        );
 
-  name.appendChild(document.createTextNode(c.name));
+        item.appendChild(info);
 
-  var cat = document.createElement("div");
-  cat.className = "channel-category";
-  cat.appendChild(document.createTextNode(c.category));
+        item.setAttribute("data-index", i);
 
-  var status = document.createElement("div");
-  status.className = "channel-status";
-  status.appendChild(document.createTextNode(getCheckLabel(c)));
+        item.onclick = function() {
+            playChannel(parseInt(this.getAttribute("data-index"), 10));
+        };
 
-  info.appendChild(name);
-  info.appendChild(cat);
-  info.appendChild(status);
+        list.appendChild(item);
+    }
 
-  var star = document.createElement("div");
-  star.className = "star";
-
-  star.innerHTML =
-  favorites.indexOf(c.url) !== -1 ? "★" : "☆";
-
-  star.onclick = (function(url) {
-   return function(e) {
-    if (e) e.stopPropagation();
-    toggleFavorite(url);
-   };
-  })(c.url);
-
-  div.appendChild(img);
-  div.appendChild(info);
-  div.appendChild(star);
-
-  div.onclick = (function(index) {
-   return function() {
-    playChannel(index);
-   };
-  })(i);
-
-  list.appendChild(div);
- }
-
- if (!count) {
-  list.innerHTML =
-  '<div class="empty">Каналы не найдены</div>';
- }
+    document.getElementById("bottomInfo").textContent =
+        "Каналов: " + channels.length +
+        " · Исключено: " + excludedChannels.length;
 }
 
-/* СТАТУС */
-
-function getCheckLabel(c) {
-
- if (c.checkStatus === "working")
-  return "🟢 Работает";
-
- if (c.checkStatus === "failed")
-  return "🔴 Ошибка";
-
- if (c.checkStatus === "checking")
-  return "🟡 Проверяется";
-
- if (c.checkStatus === "unverified")
-  return "⚪ Не проверен";
-
- return "";
-}
-
-/* ИЗБРАННОЕ */
-
-function toggleFavorite(url) {
-
- var i = favorites.indexOf(url);
-
- if (i !== -1) {
-  favorites.splice(i, 1);
- } else {
-  favorites.push(url);
- }
-
- try {
-  localStorage.setItem(
-   "iptvFavorites",
-   JSON.stringify(favorites)
-  );
- } catch(e) {}
-
- renderChannels();
-}
-
-function toggleFavorites() {
-
- showFavorites = !showFavorites;
- renderChannels();
-}
 
 /* ВОСПРОИЗВЕДЕНИЕ */
 
 function playChannel(index) {
 
- if (!channels[index]) return;
+    if (index < 0 || index >= channels.length) {
+        return;
+    }
 
- if (autoCheckRunning) {
-  stopAutoCheck();
- }
+    activeIndex = index;
 
- activeIndex = index;
+    var channel = channels[index];
 
- var channel = channels[index];
+    activeUrl = channel.url;
 
- video.pause();
- video.src = channel.url;
- video.load();
+    video.pause();
+    video.src = channel.url;
+    video.load();
 
- document.getElementById("now").innerHTML =
- "📺 " + channel.name;
+    var result = video.play();
 
- renderChannels();
+    if (result && result.catch) {
+        result.catch(function() {});
+    }
 
- var promise = video.play();
+    updateNowPlaying();
+    renderChannels();
 
- if (promise && promise.catch) {
-
-  promise.catch(function() {
-
-   document.getElementById("status").innerHTML =
-   "Нажмите Play или попробуйте другой канал";
-
-  });
- }
+    document.getElementById("status").textContent =
+        "Воспроизведение: " + channel.name;
 }
 
-function retryCurrent() {
+function stopPlayer() {
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    activeUrl = null;
+}
 
- if (activeIndex >= 0) {
-  playChannel(activeIndex);
- }
+function updateNowPlaying() {
+
+    var element = document.getElementById("now");
+
+    if (activeIndex >= 0 && channels[activeIndex]) {
+        element.textContent = channels[activeIndex].name;
+    } else {
+        element.textContent = "Выберите канал";
+    }
 }
 
 function playNext() {
 
- if (!channels.length) return;
+    if (!channels.length) {
+        return;
+    }
 
- var next = (activeIndex + 1) % channels.length;
+    var next = activeIndex + 1;
 
- playChannel(next);
+    if (next >= channels.length) {
+        next = 0;
+    }
+
+    playChannel(next);
 }
 
-/* ПРОВЕРКА ПОТОКОВ */
+function playPrevious() {
 
-function autoCheckAllStreams() {
+    if (!channels.length) {
+        return;
+    }
 
- if (!channels.length) {
-  alert("Сначала загрузите список");
-  return;
- }
+    var previous = activeIndex - 1;
 
- if (autoCheckRunning) {
-  stopAutoCheck();
-  return;
- }
+    if (previous < 0) {
+        previous = channels.length - 1;
+    }
 
- autoCheckRunning = true;
- scanIndex = 0;
-
- var token = ++scanToken;
-
- document.getElementById("scanButton").disabled = true;
- document.getElementById("stopButton").disabled = false;
-
- for (var i = 0; i < channels.length; i++) {
-  channels[i].checkStatus = "pending";
- }
-
- checkNextChannel(token);
+    playChannel(previous);
 }
 
-function checkNextChannel(token) {
+function retryChannel() {
 
- if (!autoCheckRunning || token !== scanToken) return;
-
- if (scanIndex >= channels.length) {
-  finishAutoCheck();
-  return;
- }
-
- var index = scanIndex++;
- var channel = channels[index];
-
- channel.checkStatus = "checking";
-
- document.getElementById("scanInfo").innerHTML =
- "Проверка " + scanIndex + " из " +
- channels.length + ": " + channel.name;
-
- document.getElementById("progress").style.width =
- (scanIndex / channels.length * 100) + "%";
-
- renderChannels();
-
- var testVideo = document.createElement("video");
-
- scanVideo = testVideo;
-
- testVideo.muted = true;
- testVideo.playsInline = true;
- testVideo.setAttribute("playsinline", "");
- testVideo.preload = "auto";
-
- var completed = false;
-
- function finish(status) {
-
-  if (completed) return;
-
-  completed = true;
-
-  clearTimeout(scanTimer);
-
-  testVideo.pause();
-  testVideo.removeAttribute("src");
-  testVideo.load();
-
-  if (scanVideo === testVideo) {
-   scanVideo = null;
-  }
-
-  channel.checkStatus = status;
-
-  renderChannels();
-
-  if (autoCheckRunning && token === scanToken) {
-
-   scanTimer = setTimeout(function() {
-    checkNextChannel(token);
-   }, 700);
-
-  }
- }
-
- testVideo.addEventListener("playing", function() {
-  finish("working");
- });
-
- testVideo.addEventListener("error", function() {
-  finish("failed");
- });
-
- testVideo.src = channel.url;
-
- try {
-
-  var promise = testVideo.play();
-
-  if (promise && promise.catch) {
-   promise.catch(function() {
-    finish("unverified");
-   });
-  }
-
- } catch(e) {
-
-  finish("unverified");
-
- }
-
- scanTimer = setTimeout(function() {
-  finish("unverified");
- }, 12000);
+    if (activeIndex >= 0) {
+        playChannel(activeIndex);
+    }
 }
 
-/* ОСТАНОВКА */
 
-function stopAutoCheck() {
+/* ИЗБРАННОЕ */
 
- if (!autoCheckRunning) return;
+function toggleFavorite() {
 
- autoCheckRunning = false;
- scanToken++;
+    if (activeIndex < 0 || !channels[activeIndex]) {
+        return;
+    }
 
- clearTimeout(scanTimer);
+    var url = channels[activeIndex].url;
+    var index = favorites.indexOf(url);
 
- if (scanVideo) {
+    if (index === -1) {
+        favorites.push(url);
+    } else {
+        favorites.splice(index, 1);
+    }
 
-  scanVideo.pause();
-  scanVideo.removeAttribute("src");
-  scanVideo.load();
-
-  scanVideo = null;
- }
-
- document.getElementById("status").innerHTML =
- "Проверка остановлена";
-
- document.getElementById("scanButton").disabled = false;
- document.getElementById("stopButton").disabled = true;
-
- renderChannels();
+    saveFavorites();
+    renderChannels();
 }
 
-/* ЗАВЕРШЕНИЕ */
+function showFavorites() {
+    showOnlyFavorites = true;
+    renderChannels();
+}
+
+function showAllChannels() {
+    showOnlyFavorites = false;
+    renderChannels();
+}
+
+
+/* АВТОМАТИЧЕСКАЯ ПРОВЕРКА */
+
+function startAutoCheck() {
+
+    if (checking || channels.length === 0) {
+        return;
+    }
+
+    checking = true;
+    checkIndex = 0;
+
+    document.getElementById("checkButton").disabled = true;
+    document.getElementById("removeButton").disabled = true;
+
+    document.getElementById("status").textContent =
+        "Проверка каналов началась...";
+
+    checkVideo = document.createElement("video");
+
+    checkVideo.muted = true;
+    checkVideo.preload = "none";
+
+    checkNextChannel();
+}
+
+function checkNextChannel() {
+
+    if (!checking) {
+        return;
+    }
+
+    if (checkIndex >= channels.length) {
+        finishAutoCheck();
+        return;
+    }
+
+    var channel = channels[checkIndex];
+
+    document.getElementById("status").textContent =
+        "Проверка " + (checkIndex + 1) +
+        " из " + channels.length +
+        ": " + channel.name;
+
+    var finished = false;
+
+    function finish(status) {
+
+        if (finished) {
+            return;
+        }
+
+        finished = true;
+
+        if (checkTimer) {
+            clearTimeout(checkTimer);
+            checkTimer = null;
+        }
+
+        checkVideo.pause();
+        checkVideo.removeAttribute("src");
+        checkVideo.load();
+
+        channel.checkStatus = status;
+
+        checkIndex++;
+
+        renderChannels();
+
+        checkTimer = setTimeout(function() {
+            checkNextChannel();
+        }, 100);
+    }
+
+    checkVideo.onplaying = function() {
+        finish("working");
+    };
+
+    checkVideo.onerror = function() {
+        finish("failed");
+    };
+
+    checkVideo.oncanplay = function() {
+        finish("working");
+    };
+
+    checkTimer = setTimeout(function() {
+        finish("failed");
+    }, 12000);
+
+    checkVideo.src = channel.url;
+
+    try {
+        var promise = checkVideo.play();
+
+        if (promise && promise.catch) {
+            promise.catch(function() {
+                finish("failed");
+            });
+        }
+    } catch (e) {
+        finish("failed");
+    }
+}
 
 function finishAutoCheck() {
 
- autoCheckRunning = false;
+    checking = false;
 
- var working = 0;
- var failed = 0;
- var unverified = 0;
+    if (checkTimer) {
+        clearTimeout(checkTimer);
+        checkTimer = null;
+    }
 
- for (var i = 0; i < channels.length; i++) {
+    if (checkVideo) {
+        checkVideo.pause();
+        checkVideo.removeAttribute("src");
+        checkVideo.load();
+        checkVideo = null;
+    }
 
-  if (channels[i].checkStatus === "working") working++;
+    var working = 0;
+    var failed = 0;
+    var unverified = 0;
 
-  if (channels[i].checkStatus === "failed") failed++;
+    for (var i = 0; i < channels.length; i++) {
 
-  if (channels[i].checkStatus === "unverified") unverified++;
- }
+        if (channels[i].checkStatus === "working") {
+            working++;
+        }
 
- document.getElementById("status").innerHTML =
- "Проверка завершена!";
+        else if (channels[i].checkStatus === "failed") {
+            failed++;
+        }
 
- document.getElementById("scanInfo").innerHTML =
- "🟢 " + working +
- " | 🔴 " + failed +
- " | ⚪ " + unverified;
+        else {
+            unverified++;
+        }
+    }
 
- document.getElementById("progress").style.width = "100%";
+    document.getElementById("checkButton").disabled = false;
+    document.getElementById("removeButton").disabled = false;
 
- document.getElementById("scanButton").disabled = false;
- document.getElementById("stopButton").disabled = true;
+    document.getElementById("status").textContent =
+        "Проверка завершена. Рабочих: " + working +
+        ", нерабочих: " + failed +
+        ", не проверено: " + unverified;
 
- renderChannels();
+    if (failed > 0) {
+        removeFailedChannels();
+    }
 }
+
+function stopAutoCheck() {
+
+    checking = false;
+
+    if (checkTimer) {
+        clearTimeout(checkTimer);
+        checkTimer = null;
+    }
+
+    if (checkVideo) {
+        checkVideo.pause();
+        checkVideo.removeAttribute("src");
+        checkVideo.load();
+        checkVideo = null;
+    }
+
+    document.getElementById("checkButton").disabled = false;
+    document.getElementById("removeButton").disabled = false;
+}
+
+
+/* УДАЛЕНИЕ НЕРАБОЧИХ КАНАЛОВ */
+
+function removeFailedChannels() {
+
+    if (checking) {
+        stopAutoCheck();
+    }
+
+    var removed = [];
+    var oldActiveUrl = activeUrl;
+
+    channels = channels.filter(function(channel) {
+
+        if (channel.checkStatus === "failed") {
+
+            removed.push(channel.url);
+
+            if (!isExcluded(channel.url)) {
+                excludedChannels.push(channel.url);
+            }
+
+            return false;
+        }
+
+        return true;
+    });
+
+    saveExcludedChannels();
+
+    if (oldActiveUrl) {
+        activeIndex = -1;
+
+        for (var i = 0; i < channels.length; i++) {
+            if (channels[i].url === oldActiveUrl) {
+                activeIndex = i;
+                break;
+            }
+        }
+
+        if (activeIndex === -1) {
+            stopPlayer();
+        }
+    } else {
+        activeIndex = -1;
+    }
+
+    buildCategories();
+    renderChannels();
+    updateNowPlaying();
+
+    document.getElementById("status").textContent =
+        "Удалено нерабочих каналов: " + removed.length;
+}
+
+
+/* ВОССТАНОВЛЕНИЕ ИСКЛЮЧЁННЫХ КАНАЛОВ */
+
+function restoreExcluded() {
+
+    if (!confirm(
+        "Удалить весь список исключений? " +
+        "Нерабочие каналы снова появятся после обновления плейлиста."
+    )) {
+        return;
+    }
+
+    excludedChannels = [];
+
+    saveExcludedChannels();
+
+    loadPlaylist();
+
+    document.getElementById("status").textContent =
+        "Список исключений очищен";
+}
+
 
 /* ЗАПУСК */
 
 loadPlaylist();
 
+
 /* ОБНОВЛЕНИЕ КАЖДЫЕ 30 МИНУТ */
 
 setInterval(function() {
- loadPlaylist();
+    loadPlaylist();
 }, 30 * 60 * 1000);
 
 </script>
+
 </body>
 </html>
