@@ -3,12 +3,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>IPTV Россия</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="IPTV Россия">
 
 <style>
@@ -17,12 +18,18 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html {
+    background: #160d25 !important;
+    height: 100%;
+}
+
+body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
-    background: #160d25;
+    min-height: 100%;
+    background: #160d25 !important;
     color: #f5edff;
     font-family: Arial, sans-serif;
     overflow: hidden;
@@ -32,6 +39,8 @@ html, body {
     display: flex;
     width: 100%;
     height: 100%;
+    min-height: 100%;
+    background: #1b102c;
 }
 
 #left {
@@ -139,6 +148,7 @@ button:disabled {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    background: #241534;
 }
 
 .channel {
@@ -284,6 +294,7 @@ button:disabled {
 </div>
 
 <script>
+
 var playlistUrl =
     "https://iptv-org.github.io/iptv/countries/ru.m3u";
 
@@ -304,9 +315,32 @@ var activeUrl = null;
 var video = document.getElementById("video");
 
 
+/* ИСПРАВЛЕНИЕ РАЗМЕРА ЭКРАНА */
+
+function fixScreenSize() {
+
+    var height = window.innerHeight;
+
+    document.getElementById("app").style.height =
+        height + "px";
+
+    document.body.style.height =
+        height + "px";
+}
+
+window.addEventListener("load", fixScreenSize);
+
+window.addEventListener("resize", fixScreenSize);
+
+window.addEventListener("orientationchange", function() {
+    setTimeout(fixScreenSize, 300);
+});
+
+
 /* ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ */
 
 try {
+
     favorites = JSON.parse(
         localStorage.getItem("favorites") || "[]"
     );
@@ -314,11 +348,13 @@ try {
     if (!Array.isArray(favorites)) {
         favorites = [];
     }
+
 } catch (e) {
     favorites = [];
 }
 
 try {
+
     excludedChannels = JSON.parse(
         localStorage.getItem("excludedChannels") || "[]"
     );
@@ -326,6 +362,7 @@ try {
     if (!Array.isArray(excludedChannels)) {
         excludedChannels = [];
     }
+
 } catch (e) {
     excludedChannels = [];
 }
@@ -334,6 +371,7 @@ try {
 /* СОХРАНЕНИЕ */
 
 function saveFavorites() {
+
     try {
         localStorage.setItem(
             "favorites",
@@ -343,6 +381,7 @@ function saveFavorites() {
 }
 
 function saveExcludedChannels() {
+
     try {
         localStorage.setItem(
             "excludedChannels",
@@ -393,11 +432,13 @@ function loadPlaylist() {
     };
 
     xhr.onerror = function() {
+
         document.getElementById("status").textContent =
             "Ошибка соединения";
     };
 
     xhr.ontimeout = function() {
+
         document.getElementById("status").textContent =
             "Время загрузки истекло";
     };
@@ -469,6 +510,7 @@ function removeExcludedFromPlaylist() {
     renderChannels();
 
     if (channels.length === 0) {
+
         stopPlayer();
         activeIndex = -1;
         updateNowPlaying();
@@ -497,7 +539,10 @@ function buildCategories() {
             var option = document.createElement("option");
 
             option.value = group;
-            option.appendChild(document.createTextNode(group));
+
+            option.appendChild(
+                document.createTextNode(group)
+            );
 
             select.appendChild(option);
         }
@@ -592,6 +637,7 @@ function renderChannels() {
         item.setAttribute("data-index", i);
 
         item.onclick = function() {
+
             playChannel(
                 parseInt(this.getAttribute("data-index"), 10)
             );
@@ -651,8 +697,12 @@ function updateNowPlaying() {
     var element = document.getElementById("now");
 
     if (activeIndex >= 0 && channels[activeIndex]) {
-        element.textContent = "▶ " + channels[activeIndex].name;
+
+        element.textContent =
+            "▶ " + channels[activeIndex].name;
+
     } else {
+
         element.textContent = "Выберите канал";
     }
 }
@@ -824,6 +874,7 @@ function checkNextChannel() {
         var promise = checkVideo.play();
 
         if (promise && promise.catch) {
+
             promise.catch(function() {
                 finish("failed");
             });
@@ -989,6 +1040,7 @@ function restoreExcluded() {
 
 /* ЗАПУСК */
 
+fixScreenSize();
 loadPlaylist();
 
 
