@@ -71,6 +71,19 @@ body {
     border-radius: 10px;
 }
 
+/* Скрываем встроенные элементы управления видео */
+#video::-webkit-media-controls {
+    display: none !important;
+}
+
+#video::-webkit-media-controls-enclosure {
+    display: none !important;
+}
+
+#video::-webkit-media-controls-panel {
+    display: none !important;
+}
+
 #now {
     padding: 10px;
     font-size: 17px;
@@ -237,11 +250,15 @@ button:disabled {
 
     <div id="left">
 
-        <video id="video"
-               controls
-               playsinline
-               webkit-playsinline>
-        </video>
+        <!-- Видео без встроенных кнопок управления -->
+        <video
+            id="video"
+            playsinline
+            webkit-playsinline
+            controlslist="nofullscreen noremoteplayback"
+            disablepictureinpicture
+            disableremoteplayback
+        ></video>
 
         <div id="now">Выберите канал</div>
 
@@ -316,6 +333,19 @@ var activeUrl = null;
 
 var video = document.getElementById("video");
 var app = document.getElementById("app");
+
+
+/* ЗАПРЕТ ПЕРЕХОДА В FULLSCREEN */
+
+video.addEventListener("webkitbeginfullscreen", function(event) {
+    event.preventDefault();
+});
+
+video.addEventListener("fullscreenchange", function() {
+    if (document.fullscreenElement === video) {
+        document.exitFullscreen().catch(function() {});
+    }
+});
 
 
 /* РАЗМЕР ЭКРАНА */
