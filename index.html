@@ -71,17 +71,9 @@ body {
     border-radius: 10px;
 }
 
-/* Скрываем встроенные элементы управления видео */
+/* Стандартные кнопки управления видео включены */
 #video::-webkit-media-controls {
-    display: none !important;
-}
-
-#video::-webkit-media-controls-enclosure {
-    display: none !important;
-}
-
-#video::-webkit-media-controls-panel {
-    display: none !important;
+    display: flex !important;
 }
 
 #now {
@@ -119,11 +111,17 @@ button:active {
 
 button:disabled {
     opacity: 0.4;
+    cursor: not-allowed;
 }
 
 #checkButton {
     background: #63349a;
     border-color: #a66ce0;
+}
+
+#stopCheckButton {
+    background: #8a303f;
+    border-color: #db6578;
 }
 
 #removeButton {
@@ -221,6 +219,7 @@ button:disabled {
 }
 
 @media screen and (orientation: portrait) {
+
     #app {
         flex-direction: column;
     }
@@ -250,9 +249,11 @@ button:disabled {
 
     <div id="left">
 
-        <!-- Видео без встроенных кнопок управления -->
+        <!-- Видеоплеер со стандартным управлением -->
+
         <video
             id="video"
+            controls
             playsinline
             webkit-playsinline
             controlslist="nofullscreen noremoteplayback"
@@ -263,41 +264,83 @@ button:disabled {
         <div id="now">Выберите канал</div>
 
         <div class="controls">
-            <button onclick="playPrevious()">⏮ Назад</button>
-            <button onclick="playNext()">⏭ Далее</button>
-            <button onclick="retryChannel()">⟳ Повтор</button>
-            <button onclick="toggleFavorite()">★ Избранное</button>
+
+            <button onclick="playPrevious()">
+                ⏮ Назад
+            </button>
+
+            <button onclick="playNext()">
+                ⏭ Далее
+            </button>
+
+            <button onclick="retryChannel()">
+                ⟳ Повтор
+            </button>
+
+            <button onclick="toggleFavorite()">
+                ★ Избранное
+            </button>
+
         </div>
 
         <div class="controls">
-            <button id="checkButton" onclick="startAutoCheck()">
+
+            <button id="checkButton"
+                    onclick="startAutoCheck()">
                 🔍 Проверить
             </button>
 
-            <button id="removeButton" onclick="removeFailedChannels()">
+            <button id="stopCheckButton"
+                    onclick="stopAutoCheck()"
+                    disabled>
+                ⏹ Стоп проверка
+            </button>
+
+            <button id="removeButton"
+                    onclick="removeFailedChannels()">
                 🗑 Удалить нерабочие
             </button>
+
         </div>
 
         <div class="controls">
-            <button onclick="showAllChannels()">▦ Все каналы</button>
-            <button onclick="showFavorites()">♥ Мои любимые</button>
-            <button onclick="restoreExcluded()">↻ Восстановить</button>
+
+            <button onclick="showAllChannels()">
+                ▦ Все каналы
+            </button>
+
+            <button onclick="showFavorites()">
+                ♥ Мои любимые
+            </button>
+
+            <button onclick="restoreExcluded()">
+                ↻ Восстановить
+            </button>
+
         </div>
 
-        <div id="status">Загрузка списка каналов...</div>
+        <div id="status">
+            Загрузка списка каналов...
+        </div>
 
     </div>
 
     <div id="right">
 
-        <input id="search"
-               type="search"
-               placeholder="🔍 Поиск каналов..."
-               onkeyup="renderChannels()">
+        <input
+            id="search"
+            type="search"
+            placeholder="🔍 Поиск каналов..."
+            oninput="renderChannels()"
+        >
 
-        <select id="category" onchange="renderChannels()">
-            <option value="all">▦ Все категории</option>
+        <select id="category"
+                onchange="renderChannels()">
+
+            <option value="all">
+                ▦ Все категории
+            </option>
+
         </select>
 
         <div id="channelList"></div>
@@ -329,23 +372,37 @@ var checkIndex = 0;
 var checkTimer = null;
 var checkVideo = null;
 
+var checkQueue = [];
+var checkWorking = 0;
+var checkFailed = 0;
+var checkUnverified = 0;
+
 var activeUrl = null;
 
 var video = document.getElementById("video");
 var app = document.getElementById("app");
 
 
-/* ЗАПРЕТ ПЕРЕХОДА В FULLSCREEN */
+/* ЗАПРЕТ FULLSCREEN */
 
-video.addEventListener("webkitbeginfullscreen", function(event) {
-    event.preventDefault();
-});
-
-video.addEventListener("fullscreenchange", function() {
-    if (document.fullscreenElement === video) {
-        document.exitFullscreen().catch(function() {});
+video.addEventListener(
+    "webkitbeginfullscreen",
+    function(event) {
+        event.preventDefault();
     }
-});
+);
+
+video.addEventListener(
+    "fullscreenchange",
+    function() {
+
+        if (document.fullscreenElement === video) {
+
+            document.exitFullscreen().catch(function() {});
+
+        }
+    }
+);
 
 
 /* РАЗМЕР ЭКРАНА */
@@ -361,9 +418,14 @@ function fixScreenSize() {
 window.addEventListener("load", fixScreenSize);
 window.addEventListener("resize", fixScreenSize);
 
-window.addEventListener("orientationchange", function() {
-    setTimeout(fixScreenSize, 300);
-});
+window.addEventListener(
+    "orientationchange",
+    function() {
+
+        setTimeout(fixScreenSize, 300);
+
+    }
+);
 
 
 /* ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ */
@@ -379,7 +441,9 @@ try {
     }
 
 } catch (e) {
+
     favorites = [];
+
 }
 
 try {
@@ -393,7 +457,9 @@ try {
     }
 
 } catch (e) {
+
     excludedChannels = [];
+
 }
 
 
@@ -402,29 +468,39 @@ try {
 function saveFavorites() {
 
     try {
+
         localStorage.setItem(
             "favorites",
             JSON.stringify(favorites)
         );
+
     } catch (e) {}
+
 }
 
 function saveExcludedChannels() {
 
     try {
+
         localStorage.setItem(
             "excludedChannels",
             JSON.stringify(excludedChannels)
         );
+
     } catch (e) {}
+
 }
 
 function isFavorite(url) {
+
     return favorites.indexOf(url) !== -1;
+
 }
 
 function isExcluded(url) {
+
     return excludedChannels.indexOf(url) !== -1;
+
 }
 
 
@@ -456,23 +532,29 @@ function loadPlaylist() {
 
                 document.getElementById("status").textContent =
                     "Ошибка загрузки: " + xhr.status;
+
             }
+
         }
+
     };
 
     xhr.onerror = function() {
 
         document.getElementById("status").textContent =
             "Ошибка соединения";
+
     };
 
     xhr.ontimeout = function() {
 
         document.getElementById("status").textContent =
             "Время загрузки истекло";
+
     };
 
     xhr.send(null);
+
 }
 
 
@@ -498,11 +580,14 @@ function parseM3U(data) {
                 ? line.substring(comma + 1).replace(/^\s+|\s+$/g, "")
                 : "Без названия";
 
-            var groupMatch = line.match(/group-title="([^"]*)"/);
+            var groupMatch = line.match(
+                /group-title="([^"]*)"/
+            );
 
             currentGroup = groupMatch && groupMatch[1]
                 ? groupMatch[1]
                 : "Другие";
+
         }
 
         else if (
@@ -512,18 +597,26 @@ function parseM3U(data) {
         ) {
 
             result.push({
+
                 name: currentName || "Без названия",
+
                 group: currentGroup,
+
                 url: line,
+
                 checkStatus: "unverified"
+
             });
 
             currentName = "";
             currentGroup = "Другие";
+
         }
+
     }
 
     return result;
+
 }
 
 
@@ -532,7 +625,9 @@ function parseM3U(data) {
 function removeExcludedFromPlaylist() {
 
     channels = channels.filter(function(channel) {
+
         return !isExcluded(channel.url);
+
     });
 
     buildCategories();
@@ -541,9 +636,13 @@ function removeExcludedFromPlaylist() {
     if (channels.length === 0) {
 
         stopPlayer();
+
         activeIndex = -1;
+
         updateNowPlaying();
+
     }
+
 }
 
 
@@ -552,10 +651,15 @@ function removeExcludedFromPlaylist() {
 function buildCategories() {
 
     var select = document.getElementById("category");
+
+    var previousValue = select.value;
+
     var groups = {};
 
     for (var i = 0; i < channels.length; i++) {
+
         groups[channels[i].group] = true;
+
     }
 
     select.innerHTML =
@@ -574,8 +678,24 @@ function buildCategories() {
             );
 
             select.appendChild(option);
+
         }
+
     }
+
+    if (
+        previousValue === "all" ||
+        groups[previousValue]
+    ) {
+
+        select.value = previousValue;
+
+    } else {
+
+        select.value = "all";
+
+    }
+
 }
 
 
@@ -668,16 +788,22 @@ function renderChannels() {
         item.onclick = function() {
 
             playChannel(
-                parseInt(this.getAttribute("data-index"), 10)
+                parseInt(
+                    this.getAttribute("data-index"),
+                    10
+                )
             );
+
         };
 
         list.appendChild(item);
+
     }
 
     document.getElementById("bottomInfo").textContent =
         "📺 Каналов: " + channels.length +
         " · 🗑 Исключено: " + excludedChannels.length;
+
 }
 
 
@@ -696,30 +822,41 @@ function playChannel(index) {
     activeUrl = channel.url;
 
     video.pause();
+
     video.src = channel.url;
+
     video.load();
 
     var result = video.play();
 
     if (result && result.catch) {
+
         result.catch(function() {});
+
     }
 
     updateNowPlaying();
+
     renderChannels();
 
     document.getElementById("status").textContent =
         "▶ Воспроизведение: " + channel.name;
+
 }
+
 
 function stopPlayer() {
 
     video.pause();
+
     video.removeAttribute("src");
+
     video.load();
 
     activeUrl = null;
+
 }
+
 
 function updateNowPlaying() {
 
@@ -733,8 +870,11 @@ function updateNowPlaying() {
     } else {
 
         element.textContent = "Выберите канал";
+
     }
+
 }
+
 
 function playNext() {
 
@@ -749,7 +889,9 @@ function playNext() {
     }
 
     playChannel(next);
+
 }
+
 
 function playPrevious() {
 
@@ -764,13 +906,18 @@ function playPrevious() {
     }
 
     playChannel(previous);
+
 }
+
 
 function retryChannel() {
 
     if (activeIndex >= 0) {
+
         playChannel(activeIndex);
+
     }
+
 }
 
 
@@ -787,23 +934,100 @@ function toggleFavorite() {
     var index = favorites.indexOf(url);
 
     if (index === -1) {
+
         favorites.push(url);
+
     } else {
+
         favorites.splice(index, 1);
+
     }
 
     saveFavorites();
+
     renderChannels();
+
 }
+
 
 function showFavorites() {
+
     showOnlyFavorites = true;
+
     renderChannels();
+
 }
 
+
 function showAllChannels() {
+
     showOnlyFavorites = false;
+
     renderChannels();
+
+}
+
+
+/* НЕМЕДЛЕННОЕ УДАЛЕНИЕ НЕРАБОЧЕГО КАНАЛА */
+
+function excludeFailedChannel(channel) {
+
+    if (!channel) {
+        return;
+    }
+
+    // Добавляем адрес в список исключений
+
+    if (!isExcluded(channel.url)) {
+
+        excludedChannels.push(channel.url);
+
+        saveExcludedChannels();
+
+    }
+
+    // Удаляем канал из основного списка
+
+    channels = channels.filter(function(item) {
+
+        return item.url !== channel.url;
+
+    });
+
+    // Если удалён текущий канал
+
+    if (activeUrl === channel.url) {
+
+        stopPlayer();
+
+        activeIndex = -1;
+
+        updateNowPlaying();
+
+    } else if (activeUrl) {
+
+        // Обновляем индекс текущего канала
+
+        activeIndex = -1;
+
+        for (var i = 0; i < channels.length; i++) {
+
+            if (channels[i].url === activeUrl) {
+
+                activeIndex = i;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    buildCategories();
+
+    renderChannels();
+
 }
 
 
@@ -816,10 +1040,24 @@ function startAutoCheck() {
     }
 
     checking = true;
+
+    // Сохраняем очередь отдельно от списка каналов
+
+    checkQueue = channels.slice();
+
     checkIndex = 0;
 
+    checkWorking = 0;
+
+    checkFailed = 0;
+
+    checkUnverified = 0;
+
     document.getElementById("checkButton").disabled = true;
+
     document.getElementById("removeButton").disabled = true;
+
+    document.getElementById("stopCheckButton").disabled = false;
 
     document.getElementById("status").textContent =
         "🔍 Проверка каналов началась...";
@@ -827,10 +1065,15 @@ function startAutoCheck() {
     checkVideo = document.createElement("video");
 
     checkVideo.muted = true;
+
     checkVideo.preload = "none";
 
     checkNextChannel();
+
 }
+
+
+/* ПРОВЕРКА СЛЕДУЮЩЕГО КАНАЛА */
 
 function checkNextChannel() {
 
@@ -838,63 +1081,113 @@ function checkNextChannel() {
         return;
     }
 
-    if (checkIndex >= channels.length) {
+    if (checkIndex >= checkQueue.length) {
+
         finishAutoCheck();
+
         return;
+
     }
 
-    var channel = channels[checkIndex];
+    var channel = checkQueue[checkIndex];
 
     document.getElementById("status").textContent =
         "🔍 Проверка " + (checkIndex + 1) +
-        " из " + channels.length +
+        " из " + checkQueue.length +
         ": " + channel.name;
 
     var finished = false;
 
     function finish(status) {
 
-        if (finished) {
+        if (finished || !checking) {
             return;
         }
 
         finished = true;
 
         if (checkTimer) {
+
             clearTimeout(checkTimer);
+
             checkTimer = null;
+
         }
 
         checkVideo.pause();
+
         checkVideo.removeAttribute("src");
+
         checkVideo.load();
 
         channel.checkStatus = status;
+
+        if (status === "working") {
+
+            checkWorking++;
+
+        }
+
+        else if (status === "failed") {
+
+            checkFailed++;
+
+            // Удаляем сразу после ошибки
+
+            excludeFailedChannel(channel);
+
+        }
+
+        else {
+
+            checkUnverified++;
+
+        }
 
         checkIndex++;
 
         renderChannels();
 
         checkTimer = setTimeout(function() {
+
+            checkTimer = null;
+
             checkNextChannel();
+
         }, 100);
+
     }
 
+
     checkVideo.onplaying = function() {
+
         finish("working");
+
     };
+
 
     checkVideo.onerror = function() {
+
         finish("failed");
+
     };
+
 
     checkVideo.oncanplay = function() {
+
         finish("working");
+
     };
 
+
+    // Тайм-аут проверки одного канала: 12 секунд
+
     checkTimer = setTimeout(function() {
+
         finish("failed");
+
     }, 12000);
+
 
     checkVideo.src = channel.url;
 
@@ -905,89 +1198,123 @@ function checkNextChannel() {
         if (promise && promise.catch) {
 
             promise.catch(function() {
+
                 finish("failed");
+
             });
+
         }
 
     } catch (e) {
+
         finish("failed");
+
     }
+
 }
+
+
+/* ЗАВЕРШЕНИЕ ПРОВЕРКИ */
 
 function finishAutoCheck() {
 
     checking = false;
 
     if (checkTimer) {
+
         clearTimeout(checkTimer);
+
         checkTimer = null;
+
     }
 
     if (checkVideo) {
 
         checkVideo.pause();
+
         checkVideo.removeAttribute("src");
+
         checkVideo.load();
 
+        checkVideo.onplaying = null;
+        checkVideo.onerror = null;
+        checkVideo.oncanplay = null;
+
         checkVideo = null;
-    }
 
-    var working = 0;
-    var failed = 0;
-    var unverified = 0;
-
-    for (var i = 0; i < channels.length; i++) {
-
-        if (channels[i].checkStatus === "working") {
-            working++;
-        }
-
-        else if (channels[i].checkStatus === "failed") {
-            failed++;
-        }
-
-        else {
-            unverified++;
-        }
     }
 
     document.getElementById("checkButton").disabled = false;
+
     document.getElementById("removeButton").disabled = false;
 
-    document.getElementById("status").textContent =
-        "Проверка завершена. Рабочих: " + working +
-        ", нерабочих: " + failed +
-        ", не проверено: " + unverified;
+    document.getElementById("stopCheckButton").disabled = true;
 
-    if (failed > 0) {
-        removeFailedChannels();
-    }
+    document.getElementById("status").textContent =
+        "✅ Проверка завершена. " +
+        "Рабочих: " + checkWorking +
+        ", удалено: " + checkFailed +
+        ", не проверено: " + checkUnverified +
+        ". Осталось каналов: " + channels.length;
+
+    checkQueue = [];
+
 }
 
+
+/* ОСТАНОВКА ПРОВЕРКИ */
+
 function stopAutoCheck() {
+
+    if (!checking) {
+        return;
+    }
 
     checking = false;
 
     if (checkTimer) {
+
         clearTimeout(checkTimer);
+
         checkTimer = null;
+
     }
 
     if (checkVideo) {
 
         checkVideo.pause();
+
         checkVideo.removeAttribute("src");
+
         checkVideo.load();
 
+        checkVideo.onplaying = null;
+        checkVideo.onerror = null;
+        checkVideo.oncanplay = null;
+
         checkVideo = null;
+
     }
 
     document.getElementById("checkButton").disabled = false;
+
     document.getElementById("removeButton").disabled = false;
+
+    document.getElementById("stopCheckButton").disabled = true;
+
+    document.getElementById("status").textContent =
+        "⏹ Проверка остановлена. " +
+        "Проверено: " + checkIndex +
+        " из " + checkQueue.length +
+        ". Удалено: " + checkFailed +
+        ". Осталось каналов: " + channels.length;
+
+    checkQueue = [];
+
 }
 
 
-/* УДАЛЕНИЕ НЕРАБОЧИХ КАНАЛОВ */
+/* РУЧНОЕ УДАЛЕНИЕ НЕРАБОЧИХ */
 
 function removeFailedChannels() {
 
@@ -996,6 +1323,7 @@ function removeFailedChannels() {
     }
 
     var removed = [];
+
     var oldActiveUrl = activeUrl;
 
     channels = channels.filter(function(channel) {
@@ -1005,13 +1333,17 @@ function removeFailedChannels() {
             removed.push(channel.url);
 
             if (!isExcluded(channel.url)) {
+
                 excludedChannels.push(channel.url);
+
             }
 
             return false;
+
         }
 
         return true;
+
     });
 
     saveExcludedChannels();
@@ -1023,25 +1355,36 @@ function removeFailedChannels() {
         for (var i = 0; i < channels.length; i++) {
 
             if (channels[i].url === oldActiveUrl) {
+
                 activeIndex = i;
+
                 break;
+
             }
+
         }
 
         if (activeIndex === -1) {
+
             stopPlayer();
+
         }
 
     } else {
+
         activeIndex = -1;
+
     }
 
     buildCategories();
+
     renderChannels();
+
     updateNowPlaying();
 
     document.getElementById("status").textContent =
         "🗑 Удалено нерабочих каналов: " + removed.length;
+
 }
 
 
@@ -1053,7 +1396,9 @@ function restoreExcluded() {
         "Очистить список исключений? " +
         "Ранее удалённые каналы снова появятся после загрузки плейлиста."
     )) {
+
         return;
+
     }
 
     excludedChannels = [];
@@ -1064,12 +1409,14 @@ function restoreExcluded() {
 
     document.getElementById("status").textContent =
         "↻ Список исключений очищен";
+
 }
 
 
 /* ЗАПУСК */
 
 fixScreenSize();
+
 loadPlaylist();
 
 
@@ -1080,6 +1427,7 @@ setInterval(function() {
     loadPlaylist();
 
 }, 30 * 60 * 1000);
+
 
 </script>
 
