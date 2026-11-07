@@ -9,9 +9,7 @@
 <title>Русское IPTV для iPad</title>
 
 <style>
-* {
- box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
  margin: 0;
@@ -42,17 +40,10 @@ button, input, select {
  -webkit-appearance: none;
 }
 
-button {
- cursor: pointer;
-}
+button { cursor: pointer; }
 
-.controls {
- display: block;
-}
-
-.controls button {
- margin: 3px;
-}
+.controls { display: block; }
+.controls button { margin: 3px; }
 
 main {
  max-width: 1100px;
@@ -77,21 +68,14 @@ video {
  border-radius: 9px;
 }
 
-#current {
- font-size: 18px;
-}
+#current { font-size: 18px; }
 
 #status {
  color: #85d9a9;
  font-size: 14px;
 }
 
-#search {
- width: 100%;
- margin-bottom: 8px;
-}
-
-#category {
+#search, #category {
  width: 100%;
  margin-bottom: 8px;
 }
@@ -130,9 +114,7 @@ video {
  margin-right: 10px;
 }
 
-.info {
- overflow: hidden;
-}
+.info { overflow: hidden; }
 
 .name {
  font-weight: bold;
@@ -159,19 +141,13 @@ video {
 }
 
 @media (min-width: 800px) {
- .layout {
-  overflow: hidden;
- }
-
+ .layout { overflow: hidden; }
  .panel {
   float: left;
   width: 49%;
   margin-right: 1%;
  }
-
- #channels {
-  max-height: 550px;
- }
+ #channels { max-height: 550px; }
 }
 </style>
 </head>
@@ -180,7 +156,6 @@ video {
 
 <header>
  <h1>📺 Русское IPTV</h1>
-
  <div class="controls">
   <button id="refresh">↻ Обновить</button>
   <button id="favoritesButton">☆ Избранное</button>
@@ -191,23 +166,17 @@ video {
  <div class="layout">
 
   <section class="panel">
-
    <video id="video" controls playsinline
-    webkit-playsinline preload="none">
-   </video>
+    webkit-playsinline preload="none"></video>
 
    <h3 id="current">Выберите телеканал</h3>
-
    <div id="status">Ожидание канала</div>
-
   </section>
 
   <section class="panel">
-
    <h3>Список каналов</h3>
 
-   <input id="search"
-    type="search"
+   <input id="search" type="search"
     placeholder="Поиск канала...">
 
    <select id="category">
@@ -215,9 +184,7 @@ video {
    </select>
 
    <div id="channels">Загрузка каналов...</div>
-
    <p id="updated"></p>
-
   </section>
 
  </div>
@@ -225,10 +192,9 @@ video {
 
 <script type="text/javascript">
 
-/* IPTV playlist */
-
+/* Российский IPTV плейлист */
 var PLAYLIST =
- "https://iptv-org.github.io/iptv/languages/rus.m3u";
+ "https://iptv-org.github.io/iptv/countries/ru.m3u";
 
 var channels = [];
 var favorites = [];
@@ -238,7 +204,7 @@ var activeUrl = "";
 var video = document.getElementById("video");
 var statusText = document.getElementById("status");
 
-/* Load favorites */
+/* Избранное */
 
 try {
  favorites = JSON.parse(
@@ -252,34 +218,27 @@ try {
  favorites = [];
 }
 
-/* Read M3U attributes */
+/* Атрибуты M3U */
 
 function getAttribute(line, name) {
-
  var regex = new RegExp(
   name + '="([^"]*)"', "i"
  );
-
  var match = line.match(regex);
-
  return match ? match[1] : "";
 }
 
-/* Parse playlist */
+/* Разбор плейлиста */
 
 function parseM3U(data) {
-
  var lines = data.split(/\r?\n/);
  var result = [];
  var info = null;
- var i;
 
- for (i = 0; i < lines.length; i++) {
-
+ for (var i = 0; i < lines.length; i++) {
   var s = lines[i].replace(/^\s+|\s+$/g, "");
 
   if (s.indexOf("#EXTINF:") === 0) {
-
    info = s;
 
   } else if (
@@ -287,11 +246,9 @@ function parseM3U(data) {
    s.charAt(0) !== "#" &&
    info
   ) {
-
    var comma = info.indexOf(",");
 
    result.push({
-
     name: comma >= 0 ?
      info.substring(comma + 1).replace(/^\s+|\s+$/g, "") :
      "Без названия",
@@ -304,7 +261,6 @@ function parseM3U(data) {
 
     logo:
      getAttribute(info, "tvg-logo")
-
    });
 
    info = null;
@@ -314,10 +270,9 @@ function parseM3U(data) {
  return result;
 }
 
-/* Load playlist using old Safari compatible XHR */
+/* Загрузка списка */
 
 function loadPlaylist() {
-
  statusText.textContent = "Обновление списка...";
 
  var xhr = new XMLHttpRequest();
@@ -326,20 +281,14 @@ function loadPlaylist() {
  xhr.timeout = 30000;
 
  xhr.onreadystatechange = function() {
-
-  if (xhr.readyState !== 4) {
-   return;
-  }
+  if (xhr.readyState !== 4) return;
 
   if (xhr.status >= 200 && xhr.status < 300) {
-
    var parsed = parseM3U(xhr.responseText);
 
    if (parsed.length === 0) {
-
     statusText.textContent = "Плейлист пуст";
     return;
-
    }
 
    channels = parsed;
@@ -355,44 +304,34 @@ function loadPlaylist() {
    statusText.textContent = "Список каналов обновлён";
 
   } else {
-
    statusText.textContent =
     "Ошибка загрузки. HTTP " + xhr.status;
-
   }
  };
 
  xhr.onerror = function() {
-
   statusText.textContent =
    "Ошибка интернета или доступа к плейлисту";
-
  };
 
  xhr.ontimeout = function() {
-
   statusText.textContent = "Время ожидания истекло";
-
  };
 
  xhr.send(null);
 }
 
-/* Categories */
+/* Категории */
 
 function updateCategories() {
-
  var select = document.getElementById("category");
  var old = select.value;
  var groups = [];
- var i;
 
- for (i = 0; i < channels.length; i++) {
-
+ for (var i = 0; i < channels.length; i++) {
   if (groups.indexOf(channels[i].group) === -1) {
    groups.push(channels[i].group);
   }
-
  }
 
  groups.sort();
@@ -400,24 +339,19 @@ function updateCategories() {
  select.innerHTML =
   '<option value="">Все категории</option>';
 
- for (i = 0; i < groups.length; i++) {
-
+ for (var j = 0; j < groups.length; j++) {
   var option = document.createElement("option");
-
-  option.value = groups[i];
-  option.textContent = groups[i];
-
+  option.value = groups[j];
+  option.textContent = groups[j];
   select.appendChild(option);
-
  }
 
  select.value = old;
 }
 
-/* Render channel list */
+/* Отображение каналов */
 
 function renderChannels() {
-
  var root = document.getElementById("channels");
 
  var search = document.getElementById("search")
@@ -428,10 +362,8 @@ function renderChannels() {
  root.innerHTML = "";
 
  var count = 0;
- var i;
 
- for (i = 0; i < channels.length; i++) {
-
+ for (var i = 0; i < channels.length; i++) {
   var c = channels[i];
 
   if (c.name.toLowerCase().indexOf(search) === -1) {
@@ -452,26 +384,20 @@ function renderChannels() {
   count++;
 
   var button = document.createElement("button");
-
   button.className = "channel";
+  button.type = "button";
 
   if (c.url === activeUrl) {
    button.className += " active";
   }
 
-  button.type = "button";
-
   if (c.logo) {
-
    var img = document.createElement("img");
-
    img.src = c.logo;
    img.alt = "";
-
    img.onerror = function() {
     this.style.display = "none";
    };
-
    button.appendChild(img);
   }
 
@@ -488,7 +414,6 @@ function renderChannels() {
 
   info.appendChild(name);
   info.appendChild(group);
-
   button.appendChild(info);
 
   var star = document.createElement("span");
@@ -498,55 +423,41 @@ function renderChannels() {
    favorites.indexOf(c.url) !== -1 ? "★" : "☆";
 
   star.onclick = (function(channel) {
-
    return function(e) {
-
     if (e && e.stopPropagation) {
      e.stopPropagation();
     }
-
     toggleFavorite(channel.url);
-
    };
-
   })(c);
 
   button.appendChild(star);
 
   button.onclick = (function(channel) {
-
    return function() {
     playChannel(channel);
    };
-
   })(c);
 
   root.appendChild(button);
  }
 
  if (count === 0) {
-
   var empty = document.createElement("p");
   empty.textContent = "Каналы не найдены";
   root.appendChild(empty);
-
  }
 }
 
-/* Favorites */
+/* Избранное */
 
 function toggleFavorite(url) {
-
  var index = favorites.indexOf(url);
 
  if (index !== -1) {
-
   favorites.splice(index, 1);
-
  } else {
-
   favorites.push(url);
-
  }
 
  try {
@@ -560,7 +471,6 @@ function toggleFavorite(url) {
 }
 
 function toggleFavorites() {
-
  favoritesOnly = !favoritesOnly;
 
  document.getElementById("favoritesButton").textContent =
@@ -569,84 +479,62 @@ function toggleFavorites() {
  renderChannels();
 }
 
-/* Play channel using native iOS HLS */
+/* Воспроизведение */
 
 function playChannel(c) {
-
  activeUrl = c.url;
 
  document.getElementById("current").textContent = c.name;
-
  statusText.textContent = "Подключение к каналу...";
 
  renderChannels();
 
  video.pause();
-
  video.removeAttribute("src");
-
  video.load();
-
- /*
-  iPad mini 1:
-  Safari has native HLS support.
-  No hls.js required.
- */
 
  video.src = c.url;
-
  video.load();
 
- /*
-  play() is called directly after the user
-  selects a channel.
- */
-
  try {
+  var promise = video.play();
 
-  video.play();
+  if (promise && promise.catch) {
+   promise.catch(function() {
+    statusText.textContent =
+     "Нажмите Play для запуска. Если не работает, попробуйте другой канал.";
+   });
+  }
 
-  statusText.textContent =
-   "Запуск трансляции...";
+  statusText.textContent = "Запуск трансляции...";
 
  } catch(e) {
-
-  statusText.textContent =
-   "Нажмите Play для запуска";
-
+  statusText.textContent = "Нажмите Play для запуска";
  }
 }
 
-/* Video events */
+/* События плеера */
 
 video.addEventListener("playing", function() {
-
  statusText.textContent = "В эфире";
-
 }, false);
 
 video.addEventListener("waiting", function() {
-
  statusText.textContent = "Загрузка трансляции...";
-
 }, false);
 
 video.addEventListener("error", function() {
-
  statusText.textContent =
   "Ошибка потока. Возможно, канал недоступен.";
-
 }, false);
 
 video.addEventListener("pause", function() {
-
  if (video.currentSrc) {
   statusText.textContent = "Пауза";
  }
-
 }, false);
 
-/* Buttons and search */
+/* Кнопки и поиск */
 
 document.getElementById("refresh").onclick =
  loadPlaylist;
@@ -660,11 +548,11 @@ document.getElementById("search").oninput =
 document.getElementById("category").onchange =
  renderChannels;
 
-/* Start */
+/* Запуск */
 
 loadPlaylist();
 
-/* Refresh every 30 minutes */
+/* Обновление каждые 30 минут */
 
 setInterval(loadPlaylist, 30 * 60 * 1000);
 
