@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -117,11 +118,6 @@ button:disabled {
     border-color: #bd609d;
 }
 
-#fullscreenButton {
-    background: #6940a0;
-    border-color: #bd8aef;
-}
-
 #search {
     width: 100%;
     padding: 13px;
@@ -211,116 +207,17 @@ button:disabled {
     min-height: 27px;
 }
 
-/* ПОЛНОЭКРАННЫЙ РЕЖИМ */
-
-#app.iptv-fullscreen {
-    position: fixed;
-    z-index: 99990;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    height: 100dvh;
-    background: #080510;
-}
-
-#app.iptv-fullscreen #left {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-}
-
-#app.iptv-fullscreen #video {
-    width: 100%;
-    height: 100%;
-    flex: 1;
-    min-height: 0;
-    border: 0;
-    border-radius: 0;
-}
-
-#app.iptv-fullscreen #right,
-#app.iptv-fullscreen #now,
-#app.iptv-fullscreen .controls,
-#app.iptv-fullscreen #status {
-    display: none;
-}
-
-/* ПАНЕЛЬ КАНАЛОВ ПОВЕРХ ВИДЕО */
-
-#fullscreenChannels {
-    display: none;
-    position: absolute;
-    z-index: 99999;
-    top: 0;
-    right: 0;
-    width: 340px;
-    max-width: 85%;
-    height: 100%;
-    height: 100dvh;
-    background: rgba(27, 16, 44, 0.97);
-    border-left: 2px solid #8050b5;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    color: white;
-    touch-action: pan-y;
-}
-
-#fullscreenChannels.visible {
-    display: block;
-}
-
-#fullscreenHint {
-    padding: 16px 12px;
-    background: #43245f;
-    color: white;
-    font-weight: bold;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    border-bottom: 1px solid #8050b5;
-}
-
-#fullscreenList .channel {
-    padding: 15px 12px;
-    font-size: 14px;
-}
-
-#fullscreenList .channel.active {
-    background: #713e9f;
-    border-left: 4px solid #d6a5ff;
-}
-
-#fullscreenList .channel.favorite {
-    color: #ffdc83;
-}
-
-#fullscreenList .channel.failed {
-    color: #ff8585;
-}
-
-#fullscreenList .channel.unverified {
-    color: #c8b8d6;
-}
-
-#fullscreenEmpty {
-    padding: 20px;
-    text-align: center;
-    color: #c4a9df;
-}
-
 @media screen and (orientation: portrait) {
-    #app:not(.iptv-fullscreen) {
+    #app {
         flex-direction: column;
     }
 
-    #app:not(.iptv-fullscreen) #left {
+    #left {
         width: 100%;
         height: 48%;
     }
 
-    #app:not(.iptv-fullscreen) #right {
+    #right {
         width: 100%;
         height: 52%;
         border-left: 0;
@@ -353,7 +250,6 @@ button:disabled {
             <button onclick="playNext()">⏭ Далее</button>
             <button onclick="retryChannel()">⟳ Повтор</button>
             <button onclick="toggleFavorite()">★ Избранное</button>
-            <button id="fullscreenButton" onclick="toggleAppFullscreen()">⛶ Полный экран</button>
         </div>
 
         <div class="controls">
@@ -395,18 +291,6 @@ button:disabled {
 
     </div>
 
-    <!-- ПАНЕЛЬ КАНАЛОВ В ПОЛНОЭКРАННОМ РЕЖИМЕ -->
-
-    <div id="fullscreenChannels">
-
-        <div id="fullscreenHint">
-            📺 СПИСОК КАНАЛОВ
-        </div>
-
-        <div id="fullscreenList"></div>
-
-    </div>
-
 </div>
 
 <script>
@@ -433,14 +317,6 @@ var activeUrl = null;
 var video = document.getElementById("video");
 var app = document.getElementById("app");
 
-var fullscreenPanel =
-    document.getElementById("fullscreenChannels");
-
-var fullscreenList =
-    document.getElementById("fullscreenList");
-
-var fullscreenTimer = null;
-
 
 /* РАЗМЕР ЭКРАНА */
 
@@ -448,10 +324,7 @@ function fixScreenSize() {
 
     var height = window.innerHeight;
 
-    if (!app.classList.contains("iptv-fullscreen")) {
-        app.style.height = height + "px";
-    }
-
+    app.style.height = height + "px";
     document.body.style.height = height + "px";
 }
 
@@ -641,10 +514,6 @@ function removeExcludedFromPlaylist() {
         activeIndex = -1;
         updateNowPlaying();
     }
-
-    if (fullscreenPanel.classList.contains("visible")) {
-        renderFullscreenChannels();
-    }
 }
 
 
@@ -811,11 +680,6 @@ function playChannel(index) {
 
     document.getElementById("status").textContent =
         "▶ Воспроизведение: " + channel.name;
-
-    if (fullscreenPanel.classList.contains("visible")) {
-        renderFullscreenChannels();
-        resetFullscreenTimer();
-    }
 }
 
 function stopPlayer() {
@@ -900,10 +764,6 @@ function toggleFavorite() {
 
     saveFavorites();
     renderChannels();
-
-    if (fullscreenPanel.classList.contains("visible")) {
-        renderFullscreenChannels();
-    }
 }
 
 function showFavorites() {
@@ -1152,10 +1012,6 @@ function removeFailedChannels() {
 
     document.getElementById("status").textContent =
         "🗑 Удалено нерабочих каналов: " + removed.length;
-
-    if (fullscreenPanel.classList.contains("visible")) {
-        renderFullscreenChannels();
-    }
 }
 
 
@@ -1179,314 +1035,6 @@ function restoreExcluded() {
     document.getElementById("status").textContent =
         "↻ Список исключений очищен";
 }
-
-
-/* ПОЛНОЭКРАННЫЙ РЕЖИМ */
-
-function isAppFullscreen() {
-
-    return app.classList.contains("iptv-fullscreen") ||
-           document.fullscreenElement === app ||
-           document.webkitFullscreenElement === app;
-}
-
-
-function toggleAppFullscreen() {
-
-    if (isAppFullscreen()) {
-        exitAppFullscreen();
-    } else {
-        enterAppFullscreen();
-    }
-}
-
-
-function enterAppFullscreen() {
-
-    app.classList.add("iptv-fullscreen");
-
-    fixScreenSize();
-
-    if (app.requestFullscreen) {
-
-        var promise = app.requestFullscreen();
-
-        if (promise && promise.catch) {
-            promise.catch(function() {
-                app.classList.add("iptv-fullscreen");
-            });
-        }
-
-    } else if (app.webkitRequestFullscreen) {
-
-        try {
-            app.webkitRequestFullscreen();
-        } catch (e) {}
-
-    }
-
-    document.getElementById("fullscreenButton").textContent =
-        "✕ Выйти из полного экрана";
-}
-
-
-function exitAppFullscreen() {
-
-    hideFullscreenChannels();
-
-    app.classList.remove("iptv-fullscreen");
-
-    if (document.fullscreenElement && document.exitFullscreen) {
-
-        document.exitFullscreen();
-
-    } else if (
-        document.webkitFullscreenElement &&
-        document.webkitExitFullscreen
-    ) {
-
-        document.webkitExitFullscreen();
-    }
-
-    document.getElementById("fullscreenButton").textContent =
-        "⛶ Полный экран";
-
-    fixScreenSize();
-}
-
-
-/* ОТСЛЕЖИВАНИЕ СОСТОЯНИЯ FULLSCREEN */
-
-document.addEventListener("fullscreenchange", function() {
-
-    if (document.fullscreenElement === app) {
-
-        app.classList.add("iptv-fullscreen");
-
-    } else if (!document.fullscreenElement) {
-
-        app.classList.remove("iptv-fullscreen");
-        hideFullscreenChannels();
-
-        document.getElementById("fullscreenButton").textContent =
-            "⛶ Полный экран";
-    }
-
-    fixScreenSize();
-});
-
-document.addEventListener("webkitfullscreenchange", function() {
-
-    if (document.webkitFullscreenElement === app) {
-
-        app.classList.add("iptv-fullscreen");
-
-    } else if (!document.webkitFullscreenElement) {
-
-        app.classList.remove("iptv-fullscreen");
-        hideFullscreenChannels();
-
-        document.getElementById("fullscreenButton").textContent =
-            "⛶ Полный экран";
-    }
-
-    fixScreenSize();
-});
-
-
-/* СПИСОК КАНАЛОВ В ПОЛНОЭКРАННОМ РЕЖИМЕ */
-
-function renderFullscreenChannels() {
-
-    fullscreenList.innerHTML = "";
-
-    if (channels.length === 0) {
-
-        var empty = document.createElement("div");
-
-        empty.id = "fullscreenEmpty";
-        empty.textContent = "Каналы не найдены";
-
-        fullscreenList.appendChild(empty);
-
-        return;
-    }
-
-    for (var i = 0; i < channels.length; i++) {
-
-        (function(index) {
-
-            var channel = channels[index];
-
-            var item = document.createElement("div");
-
-            item.className = "channel";
-
-            if (index === activeIndex) {
-                item.className += " active";
-            }
-
-            if (isFavorite(channel.url)) {
-                item.className += " favorite";
-            }
-
-            if (channel.checkStatus === "failed") {
-                item.className += " failed";
-            }
-
-            if (channel.checkStatus === "unverified") {
-                item.className += " unverified";
-            }
-
-            var name = document.createElement("span");
-
-            name.className = "channelName";
-
-            name.textContent =
-                (isFavorite(channel.url) ? "★ " : "▶ ") +
-                channel.name;
-
-            item.appendChild(name);
-
-            var info = document.createElement("span");
-
-            info.className = "channelInfo";
-
-            info.textContent =
-                channel.group + " · " + channel.checkStatus;
-
-            item.appendChild(info);
-
-            item.onclick = function(e) {
-
-                e.stopPropagation();
-
-                playChannel(index);
-
-                resetFullscreenTimer();
-            };
-
-            fullscreenList.appendChild(item);
-
-        })(i);
-    }
-
-    /* ПРОКРУТКА К ТЕКУЩЕМУ КАНАЛУ */
-
-    var activeItem = fullscreenList.querySelector(".active");
-
-    if (activeItem) {
-        activeItem.scrollIntoView({
-            block: "nearest",
-            behavior: "auto"
-        });
-    }
-}
-
-
-/* ПОКАЗАТЬ СПИСОК */
-
-function showFullscreenChannels() {
-
-    if (!isAppFullscreen()) {
-        return;
-    }
-
-    renderFullscreenChannels();
-
-    fullscreenPanel.classList.add("visible");
-
-    resetFullscreenTimer();
-}
-
-
-/* СКРЫТЬ СПИСОК */
-
-function hideFullscreenChannels() {
-
-    fullscreenPanel.classList.remove("visible");
-
-    if (fullscreenTimer) {
-
-        clearTimeout(fullscreenTimer);
-
-        fullscreenTimer = null;
-    }
-}
-
-
-/* ТАЙМЕР 10 СЕКУНД */
-
-function resetFullscreenTimer() {
-
-    if (fullscreenTimer) {
-        clearTimeout(fullscreenTimer);
-    }
-
-    fullscreenTimer = setTimeout(function() {
-
-        hideFullscreenChannels();
-
-    }, 10000);
-}
-
-
-/* КАСАНИЕ ЭКРАНА */
-
-video.addEventListener("click", function() {
-
-    if (!isAppFullscreen()) {
-        return;
-    }
-
-    if (fullscreenPanel.classList.contains("visible")) {
-
-        hideFullscreenChannels();
-
-    } else {
-
-        showFullscreenChannels();
-    }
-});
-
-
-/* АКТИВНОСТЬ В СПИСКЕ */
-
-fullscreenPanel.addEventListener("touchstart", function() {
-
-    resetFullscreenTimer();
-
-}, { passive: true });
-
-
-fullscreenPanel.addEventListener("touchmove", function() {
-
-    resetFullscreenTimer();
-
-}, { passive: true });
-
-
-fullscreenPanel.addEventListener("wheel", function() {
-
-    resetFullscreenTimer();
-
-}, { passive: true });
-
-
-fullscreenPanel.addEventListener("click", function() {
-
-    resetFullscreenTimer();
-
-});
-
-
-/* ЗАКРЫТИЕ ПРИ ВЫХОДЕ ИЗ ПОЛНОГО ЭКРАНА */
-
-video.addEventListener("webkitendfullscreen", function() {
-
-    hideFullscreenChannels();
-
-});
 
 
 /* ЗАПУСК */
