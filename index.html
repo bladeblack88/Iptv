@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
@@ -503,6 +505,7 @@ var checkFailed = 0;
 var checkUnverified = 0;
 
 var activeUrl = null;
+var hlsPlayer = null;
 
 var video = document.getElementById("video");
 var app = document.getElementById("app");
@@ -972,16 +975,52 @@ function playChannel(index) {
 
     video.pause();
 
-    video.src = channel.url;
+    if (hlsPlayer) {
+        hlsPlayer.destroy();
+        hlsPlayer = null;
+    }
 
+    video.removeAttribute("src");
     video.load();
 
-    var result = video.play();
+    var isHls = /\.m3u8(?:$|\?)/i.test(channel.url);
 
-    if (result && result.catch) {
+    if (isHls && window.Hls && Hls.isSupported()) {
+        hlsPlayer = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false,
+            backBufferLength: 30
+        });
 
-        result.catch(function() {});
+        hlsPlayer.loadSource(channel.url);
+        hlsPlayer.attachMedia(video);
 
+        hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play().catch(function() {
+                document.getElementById("status").textContent =
+                    "Нажмите ▶ на плеере, чтобы начать просмотр";
+            });
+        });
+
+        hlsPlayer.on(Hls.Events.ERROR, function(event, data) {
+            if (data.fatal) {
+                document.getElementById("status").textContent =
+                    "Не удалось воспроизвести канал: поток недоступен или заблокирован";
+                hlsPlayer.destroy();
+                hlsPlayer = null;
+            }
+        });
+    } else {
+        video.src = channel.url;
+        video.load();
+
+        var result = video.play();
+        if (result && result.catch) {
+            result.catch(function() {
+                document.getElementById("status").textContent =
+                    "Этот поток не поддерживается браузером или требует запуска кнопкой ▶";
+            });
+        }
     }
 
     updateNowPlaying();
