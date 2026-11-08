@@ -119,8 +119,8 @@ def main():
     for metadata, url in working:
         lines.extend(metadata)
         lines.append(url)
-    with open(OUTPUT, "w", encoding="utf-8", newline="\\n") as file:
-        file.write("\\n".join(lines) + "\\n")
+    with open(OUTPUT, "w", encoding="utf-8", newline="\n") as file:
+        file.write("\n".join(lines) + "\n")
     print(f"Wrote {OUTPUT}")
 
 if __name__ == "__main__":
