@@ -376,6 +376,14 @@ button:disabled { opacity:.35; }
     .controls { gap:4px; }
 }
 
+/* Горизонтальная ориентация: плеер 70%, список каналов 30% в один столбец */
+@media screen and (orientation: landscape) {
+    #app { flex-direction: row; }
+    #left { width: 70%; height: 100%; }
+    #right { width: 30%; height: 100%; border-left: 1px solid var(--line); border-top: 0; }
+    #channelList { grid-template-columns: 1fr; }
+}
+
 /* Минималистичная панель управления */
 .icon-controls {
     display:flex;
