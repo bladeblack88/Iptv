@@ -425,27 +425,7 @@ button:disabled { opacity:.35; }
 
         </div>
 
-        <div class="controls">
-
-            <button id="checkButton"
-                    onclick="startAutoCheck()">
-                🔍 Проверить
-            </button>
-
-            <button id="stopCheckButton"
-                    onclick="stopAutoCheck()"
-                    disabled>
-                ⏹ Стоп проверка
-            </button>
-
-            <button id="removeButton"
-                    onclick="removeFailedChannels()">
-                🗑 Удалить нерабочие
-            </button>
-
-        </div>
-
-        <div class="controls">
+<div class="controls">
 
             <button onclick="showAllChannels()">
                 ▦ Все каналы
@@ -454,12 +434,7 @@ button:disabled { opacity:.35; }
             <button onclick="showFavorites()">
                 ♥ Мои любимые
             </button>
-
-            <button onclick="restoreExcluded()">
-                ↻ Восстановить
-            </button>
-
-        </div>
+</div>
 
         <div id="status">
             Загрузка списка каналов...
@@ -508,7 +483,7 @@ button:disabled { opacity:.35; }
 /* ОСНОВНЫЕ ПЕРЕМЕННЫЕ */
 
 var playlistUrl =
-    "https://iptv-org.github.io/iptv/countries/ru.m3u";
+    "working.m3u";
 
 var channels = [];
 var favorites = [];
@@ -681,7 +656,7 @@ function loadPlaylist() {
             } else {
 
                 document.getElementById("status").textContent =
-                    "Ошибка загрузки: " + xhr.status;
+                    "Общий плейлист ещё не опубликован. GitHub выполняет первую проверку — попробуйте обновить страницу позже.";
 
             }
 
@@ -692,14 +667,14 @@ function loadPlaylist() {
     xhr.onerror = function() {
 
         document.getElementById("status").textContent =
-            "Ошибка соединения";
+            "Не удалось загрузить общий плейлист. Проверьте соединение и обновите страницу.";
 
     };
 
     xhr.ontimeout = function() {
 
         document.getElementById("status").textContent =
-            "Время загрузки истекло";
+            "Загрузка общего плейлиста заняла слишком много времени.";
 
     };
 
