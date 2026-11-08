@@ -454,22 +454,6 @@ button:disabled { opacity:.35; }
             <div class="library-count" id="libraryCount">ЗАГРУЗКА</div>
         </div>
 
-        <input
-            id="search"
-            type="search"
-            placeholder="🔍 Поиск каналов..."
-            oninput="renderChannels()"
-        >
-
-        <select id="category"
-                onchange="renderChannels()">
-
-            <option value="all">
-                ▦ Все категории
-            </option>
-
-        </select>
-
         <div id="channelList"></div>
 
         <div id="bottomInfo">
@@ -839,11 +823,6 @@ function renderChannels() {
 
     var list = document.getElementById("channelList");
 
-    var search = document.getElementById("search")
-        .value.toLowerCase();
-
-    var category = document.getElementById("category").value;
-
     list.innerHTML = "";
 
     for (var i = 0; i < channels.length; i++) {
@@ -853,20 +832,6 @@ function renderChannels() {
         if (
             showOnlyFavorites &&
             !isFavorite(channel.url)
-        ) {
-            continue;
-        }
-
-        if (
-            category !== "all" &&
-            channel.group !== category
-        ) {
-            continue;
-        }
-
-        if (
-            search &&
-            channel.name.toLowerCase().indexOf(search) === -1
         ) {
             continue;
         }
@@ -1211,8 +1176,6 @@ function excludeFailedChannel(channel) {
         }
 
     }
-
-    buildCategories();
 
     renderChannels();
 
