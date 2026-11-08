@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Publish only streams whose media endpoint can actually be read."""
+"""Build a working IPTV playlist, verify streams, and keep the fastest duplicate."""
 import concurrent.futures
 import re
+import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -10,7 +12,14 @@ SOURCE = "https://iptv-org.github.io/iptv/countries/ru.m3u"
 OUTPUT = "working.m3u"
 TIMEOUT = 15
 WORKERS = 16
+REPEAT_CHECKS = 2
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
+EXTRA_CHANNELS = [
+    (
+        ['#EXTINF:-1 tvg-id="Peretz.ru@SD" group-title="Entertainment",Перец'],
+        "https://zabava-htlive.cdn.ngenix.net/hls/CH_PERETZ/variant.m3u8",
+    ),
+]
 
 def request_bytes(url, limit=8192):
     headers = {
@@ -41,13 +50,11 @@ def looks_like_hls(url, data, content_type):
 
 def first_media_uri(text):
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    # For a master playlist, choose the first variant after EXT-X-STREAM-INF.
     for i, line in enumerate(lines[:-1]):
         if line.startswith("#EXT-X-STREAM-INF:"):
             for candidate in lines[i + 1:]:
                 if not candidate.startswith("#"):
                     return candidate
-    # For a media playlist, choose its first media segment.
     for line in lines:
         if not line.startswith("#"):
             return line
@@ -70,16 +77,27 @@ def probe_hls(url, playlist_data, depth=0):
         probe_hls(final_url, sample, depth + 1)
     return True
 
-def is_working(entry):
+def probe_once(entry):
     _, url = entry
+    data, final_url, content_type = request_bytes(url)
+    if looks_like_hls(final_url, data, content_type):
+        probe_hls(final_url, data)
+    elif len(data) < 188:
+        raise ValueError("media response is too short")
+    return True
+
+def check_entry(entry):
+    timings = []
     try:
-        data, final_url, content_type = request_bytes(url)
-        if looks_like_hls(final_url, data, content_type):
-            return probe_hls(final_url, data)
-        # For direct TS/AAC/MP4 streams, a non-empty non-HTML media response is required.
-        return len(data) >= 188
+        for _ in range(REPEAT_CHECKS):
+            started = time.monotonic()
+            probe_once(entry)
+            timings.append(time.monotonic() - started)
+        # Both independent checks must pass. Lower average probe time wins
+        # when several working URLs point to the same channel.
+        return (True, sum(timings) / len(timings))
     except (urllib.error.URLError, TimeoutError, OSError, ValueError, UnicodeError):
-        return False
+        return (False, float("inf"))
 
 def fetch_source():
     data, _, _ = request_bytes(SOURCE, 2_000_000)
@@ -106,19 +124,52 @@ def parse_entries(data):
                 pending = []
     return entries
 
+def channel_key(entry):
+    metadata, _ = entry
+    extinf = next((line for line in metadata if line.startswith("#EXTINF:")), "")
+    title = extinf.rsplit(",", 1)[-1] if "," in extinf else extinf
+    title = re.sub(r"\([^)]*\)|\[[^]]*\]", " ", title)
+    title = re.sub(r"\b(?:\d{3,4}p|\d{3,4}i|4k|uhd|fhd|hd|sd)\b", " ", title, flags=re.I)
+    title = unicodedata.normalize("NFKC", title).casefold()
+    title = re.sub(r"[^\w]+", "", title, flags=re.UNICODE)
+    return title or extinf.casefold()
+
 def main():
     entries = parse_entries(fetch_source())
-    print(f"Found {len(entries)} source channels")
+    known_urls = {url.rstrip("/") for _, url in entries}
+    for extra in EXTRA_CHANNELS:
+        if extra[1].rstrip("/") not in known_urls:
+            entries.append(extra)
+            known_urls.add(extra[1].rstrip("/"))
+    print(f"Found {len(entries)} source channels, including {len(EXTRA_CHANNELS)} custom channel(s)")
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
-        results = list(pool.map(is_working, entries))
-    working = [entry for entry, ok in zip(entries, results) if ok]
-    print(f"Streams with readable media: {len(working)} / {len(entries)}")
+        results = list(pool.map(check_entry, entries))
+
+    candidates = {}
+    failed = 0
+    for entry, (ok, latency) in zip(entries, results):
+        if not ok:
+            failed += 1
+            continue
+        key = channel_key(entry)
+        previous = candidates.get(key)
+        if previous is None or latency < previous[0]:
+            candidates[key] = (latency, entry)
+
+    working = [item[1] for item in candidates.values()]
+    print(f"Stable streams: {len(working)}; failed checks: {failed}; duplicate alternatives removed: {sum(ok for ok, _ in results) - len(working)}")
     if not working:
         raise RuntimeError("No playable media endpoints detected; keeping previous playlist")
+
+    # Keep source ordering, but only output the fastest verified URL per title.
+    selected = {id(entry) for entry in working}
     lines = ["#EXTM3U"]
-    for metadata, url in working:
-        lines.extend(metadata)
-        lines.append(url)
+    for entry in entries:
+        if id(entry) in selected:
+            metadata, url = entry
+            lines.extend(metadata)
+            lines.append(url)
     with open(OUTPUT, "w", encoding="utf-8", newline="\n") as file:
         file.write("\n".join(lines) + "\n")
     print(f"Wrote {OUTPUT}")
