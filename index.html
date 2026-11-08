@@ -376,7 +376,7 @@ button:disabled { opacity:.35; }
     .controls { gap:4px; }
 }
 
-/* Горизонтальная ориентация: только полноэкранное видео */
+/* Горизонтальная ориентация: видео 70%, только список каналов 30% */
 @media screen and (orientation: landscape) {
     html, body, #app {
         width: 100%;
@@ -385,22 +385,27 @@ button:disabled { opacity:.35; }
         margin: 0;
         overflow: hidden;
     }
-    #app { display: block; }
+    #app {
+        display: flex;
+        flex-direction: row;
+    }
     #left {
-        width: 100%;
+        width: 70%;
         height: 100%;
+        min-width: 0;
         padding: 0;
         margin: 0;
-        display: block;
+        display: flex;
+        flex-direction: column;
         background: #000;
     }
-    .brandbar, #now, .controls, #right { display: none !important; }
+    .brandbar, #now, .controls { display: none !important; }
     #video {
         display: block;
         width: 100%;
         height: 100%;
-        min-height: 100%;
-        max-height: 100%;
+        min-height: 0;
+        flex: 1 1 auto;
         border: 0;
         border-radius: 0;
         margin: 0;
@@ -409,6 +414,32 @@ button:disabled { opacity:.35; }
         background: #000;
     }
     #video::-webkit-media-controls { display: none !important; }
+
+    #right {
+        display: flex !important;
+        flex-direction: column;
+        width: 30%;
+        height: 100%;
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        border-left: 1px solid #493064;
+        box-sizing: border-box;
+        background: #241534;
+    }
+    .library-head, #bottomInfo { display: none !important; }
+    #channelList {
+        display: block;
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        grid-template-columns: 1fr !important;
+        padding: 0;
+        margin: 0;
+    }
 }
 
 /* Минималистичная панель управления */
