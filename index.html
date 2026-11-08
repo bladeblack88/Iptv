@@ -376,6 +376,64 @@ button:disabled { opacity:.35; }
     .controls { gap:4px; }
 }
 
+/* Минималистичная панель управления */
+.icon-controls {
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+    padding:5px 0;
+}
+.icon-controls .icon-btn {
+    width:42px;
+    height:42px;
+    flex:0 0 42px;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:1px solid rgba(196,181,253,.16);
+    border-radius:14px;
+    color:rgba(226,218,255,.82);
+    background:rgba(167,139,250,.055);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+}
+.icon-controls .icon-btn svg {
+    width:19px;
+    height:19px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.7;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    opacity:.9;
+}
+.icon-controls .icon-btn:hover,
+.icon-controls .icon-btn:focus-visible {
+    color:#fff;
+    border-color:rgba(196,181,253,.42);
+    background:rgba(167,139,250,.13);
+    outline:none;
+}
+.icon-controls .icon-btn:active { transform:scale(.94); }
+.control-separator {
+    width:1px;
+    height:24px;
+    flex:0 0 1px;
+    background:rgba(196,181,253,.17);
+    margin:0 1px;
+}
+@media screen and (orientation: portrait) {
+    .icon-controls { gap:7px; }
+    .icon-controls .icon-btn { width:40px; height:40px; flex-basis:40px; }
+}
+@media (max-width:380px) and (orientation:portrait) {
+    .icon-controls { gap:5px; }
+    .icon-controls .icon-btn { width:36px; height:36px; flex-basis:36px; border-radius:12px; }
+}
+
 </style>
 </head>
 
@@ -407,36 +465,27 @@ button:disabled { opacity:.35; }
 
         <div id="now">Выберите канал</div>
 
-        <div class="controls">
-
-            <button onclick="playPrevious()">
-                ⏮ Назад
+        <div class="controls icon-controls" aria-label="Управление каналами">
+            <button class="icon-btn" onclick="playPrevious()" title="Предыдущий канал" aria-label="Предыдущий канал">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M19 6l-9 6 9 6z"/></svg>
             </button>
-
-            <button onclick="playNext()">
-                ⏭ Далее
+            <button class="icon-btn" onclick="playNext()" title="Следующий канал" aria-label="Следующий канал">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5v14M5 6l9 6-9 6z"/></svg>
             </button>
-
-            <button onclick="retryChannel()">
-                ⟳ Повтор
+            <button class="icon-btn" onclick="retryChannel()" title="Повторить" aria-label="Повторить">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.8 9a7 7 0 0 1 12-2L20 12M4 17v-5h5m10.2 3a7 7 0 0 1-12 2L4 12"/></svg>
             </button>
-
-            <button onclick="toggleFavorite()">
-                ★ Избранное
+            <button class="icon-btn" onclick="toggleFavorite()" title="Добавить в избранное" aria-label="Добавить в избранное">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg>
             </button>
-
+            <span class="control-separator" aria-hidden="true"></span>
+            <button class="icon-btn" onclick="showAllChannels()" title="Все каналы" aria-label="Все каналы">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button class="icon-btn" onclick="showFavorites()" title="Избранные каналы" aria-label="Избранные каналы">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 4.2-8.8 10-8.8 10s-8.8-5.8-8.8-10A4.8 4.8 0 0 1 12 6.2a4.8 4.8 0 0 1 8.8 2.6z"/></svg>
+            </button>
         </div>
-
-<div class="controls">
-
-            <button onclick="showAllChannels()">
-                ▦ Все каналы
-            </button>
-
-            <button onclick="showFavorites()">
-                ♥ Мои любимые
-            </button>
-</div>
 
         <div id="status">
             Загрузка списка каналов...
