@@ -748,7 +748,6 @@ function removeExcludedFromPlaylist() {
 
     });
 
-    buildCategories();
     renderChannels();
 
     if (channels.length === 0) {
@@ -1526,8 +1525,6 @@ function removeFailedChannels() {
         activeIndex = -1;
 
     }
-
-    buildCategories();
 
     renderChannels();
 
