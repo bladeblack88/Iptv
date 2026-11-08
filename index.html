@@ -240,6 +240,128 @@ button:disabled {
         min-height: 100px;
     }
 }
+
+/* ===== НОВЫЙ ВИЗУАЛЬНЫЙ СТИЛЬ ===== */
+:root {
+    color-scheme: dark;
+    --bg: #0b0b14;
+    --panel: #121321;
+    --panel2: #191a2c;
+    --line: rgba(177, 143, 255, .16);
+    --accent: #a78bfa;
+    --accent2: #7c5ce7;
+    --muted: #9696b2;
+}
+html, body { background: var(--bg) !important; color: #f4f1ff; }
+body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+#app { background: var(--bg); gap: 0; }
+#left {
+    width: 68%; padding: 22px 24px; gap: 10px;
+    background: radial-gradient(ellipse at 15% 0%, rgba(124,92,231,.13), transparent 42%), var(--bg);
+}
+#right {
+    width: 32%; background: var(--panel);
+    border-left: 1px solid var(--line);
+    box-shadow: -18px 0 50px rgba(0,0,0,.16);
+}
+.brandbar {
+    min-height: 58px; display:flex; align-items:center; gap:12px;
+    padding: 0 2px 12px; flex-shrink:0;
+}
+.brandmark {
+    width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
+    color:white; font-size:20px; background:linear-gradient(145deg,#b69aff,#6945d6);
+    box-shadow:0 8px 24px rgba(124,92,231,.3);
+}
+.brandcopy { display:flex; flex-direction:column; gap:3px; }
+.brandtitle { font-size:17px; font-weight:900; letter-spacing:1.4px; }
+.brandtitle span { color:var(--accent); }
+.brandcaption { font-size:9px; color:var(--muted); letter-spacing:1.7px; font-weight:700; }
+.brandlive {
+    margin-left:auto; display:flex; align-items:center; gap:7px; padding:7px 11px;
+    border:1px solid rgba(74,222,128,.2); border-radius:30px; color:#9ce9b5;
+    background:rgba(34,197,94,.07); font-size:10px; font-weight:800; letter-spacing:1px;
+}
+.brandlive i { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 10px #4ade80; }
+#video {
+    border:1px solid rgba(167,139,250,.3); border-radius:18px;
+    background:#05050b; box-shadow:0 18px 55px rgba(0,0,0,.34);
+    width:100%;
+}
+#now { padding:8px 3px 5px; font-size:18px; color:#eee8ff; letter-spacing:.1px; }
+.controls { gap:9px; padding:3px 0; }
+button {
+    border:1px solid rgba(177,143,255,.2); border-radius:12px; padding:11px 15px;
+    background:linear-gradient(180deg,#28243e,#1c1a2e); color:#eeeaff;
+    font-size:12px; font-weight:700; box-shadow:0 5px 14px rgba(0,0,0,.16);
+    text-shadow:none; transition:transform .16s ease, border-color .16s ease, background .16s ease;
+}
+button:hover { border-color:rgba(177,143,255,.65); background:#30284b; }
+button:active { transform:scale(.97); background:#493875; }
+button:disabled { opacity:.35; }
+#checkButton { background:linear-gradient(135deg,#7654df,#5937bd); border-color:#8f72ef; }
+#stopCheckButton { background:linear-gradient(135deg,#8e3f59,#63283e); border-color:#ad536d; }
+#removeButton { background:linear-gradient(135deg,#714064,#4b2948); border-color:#92517d; }
+#status {
+    margin-top:auto; padding:11px 13px; min-height:38px; border:1px solid var(--line);
+    border-radius:11px; background:rgba(255,255,255,.025); color:#bcb1db; font-size:11px;
+}
+#search {
+    padding:17px 17px; margin:18px 16px 10px; width:calc(100% - 32px);
+    border:1px solid var(--line); border-radius:13px; background:#1a1b2d;
+    color:#fff; font-size:14px;
+}
+#search:focus { border-color:rgba(167,139,250,.65); box-shadow:0 0 0 3px rgba(167,139,250,.1); }
+#category {
+    width:calc(100% - 32px); margin:0 16px 12px; padding:13px;
+    border:1px solid var(--line); border-radius:12px; background:#1a1b2d;
+    color:#e9e3ff; font-size:12px;
+}
+#channelList { padding:0 10px 12px; background:transparent; }
+.channel {
+    margin:4px 3px; padding:14px 13px; border:1px solid transparent;
+    border-radius:12px; background:transparent; font-size:13px;
+    transition:background .15s ease, border-color .15s ease;
+}
+.channel:nth-child(even) { background:rgba(255,255,255,.025); }
+.channel:hover { background:rgba(167,139,250,.08); border-color:var(--line); }
+.channel.active {
+    background:linear-gradient(110deg,rgba(124,92,231,.28),rgba(124,92,231,.08));
+    border:1px solid rgba(167,139,250,.35); border-left:3px solid var(--accent); color:#fff;
+}
+.channel.favorite { color:#f6d98c; }
+.channel.failed { color:#ff8b9b; }
+.channel.unverified { color:#aaa5bb; }
+.channelName { margin-bottom:6px; font-size:13px; letter-spacing:.1px; }
+.channelInfo { color:#8986a4; font-size:10px; }
+#bottomInfo {
+    padding:13px 16px; border-top:1px solid var(--line);
+    background:#10111d; color:#9995b3; font-size:10px; letter-spacing:.2px;
+}
+#search::-webkit-input-placeholder { color:#77758f; }
+@media screen and (orientation: portrait) {
+    #left { width:100%; height:48%; padding:12px; gap:5px; }
+    #right { width:100%; height:52%; border-left:0; border-top:1px solid var(--line); }
+    .brandbar { min-height:39px; padding-bottom:5px; }
+    .brandmark { width:30px; height:30px; border-radius:10px; font-size:15px; }
+    .brandtitle { font-size:13px; }
+    .brandcaption { font-size:7px; }
+    .brandlive { padding:5px 8px; font-size:8px; }
+    #now { font-size:14px; min-height:28px; padding:4px 2px; }
+    .controls { gap:5px; padding:2px 0; }
+    button { padding:8px 9px; font-size:10px; border-radius:9px; }
+    #status { padding:6px 9px; min-height:25px; font-size:9px; }
+    #search { margin:9px 10px 6px; width:calc(100% - 20px); padding:11px; font-size:13px; }
+    #category { width:calc(100% - 20px); margin:0 10px 7px; padding:9px; }
+    .channel { padding:10px; margin:3px 2px; }
+    .channelName { font-size:12px; }
+}
+@media (max-width: 380px) and (orientation: portrait) {
+    #left { padding:8px; }
+    button { padding:7px 7px; font-size:9px; }
+    .controls { gap:4px; }
+}
+
 </style>
 </head>
 
@@ -248,6 +370,14 @@ button:disabled {
 <div id="app">
 
     <div id="left">
+        <div class="brandbar">
+            <div class="brandmark">▶</div>
+            <div class="brandcopy">
+                <div class="brandtitle">IPTV <span>РОССИЯ</span></div>
+                <div class="brandcaption">ТЕЛЕВИДЕНИЕ В ОДНОМ МЕСТЕ</div>
+            </div>
+            <div class="brandlive"><i></i> LIVE</div>
+        </div>
 
         <!-- Видеоплеер со стандартным управлением -->
 
