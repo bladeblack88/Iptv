@@ -871,6 +871,9 @@ function renderChannels() {
 
     var list = document.getElementById("channelList");
 
+    // Сохраняем позицию прокрутки до полной перерисовки списка.
+    var savedScrollTop = list.scrollTop;
+
     list.innerHTML = "";
 
     for (var i = 0; i < channels.length; i++) {
@@ -968,6 +971,9 @@ function renderChannels() {
 
     var count = document.getElementById("libraryCount");
     if (count) count.textContent = channels.length + " КАНАЛОВ";
+
+    // Возвращаем список на прежнюю позицию, даже если выбран канал внизу.
+    list.scrollTop = savedScrollTop;
 
 }
 
