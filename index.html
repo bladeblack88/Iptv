@@ -522,6 +522,7 @@ button:disabled { opacity:.35; }
         <video
             id="video"
             controls
+            controlslist="nofullscreen noremoteplayback"
             playsinline
             webkit-playsinline
             disableremoteplayback
@@ -652,11 +653,32 @@ window.addEventListener("resize", fixScreenSize);
 window.addEventListener(
     "orientationchange",
     function() {
-
-        setTimeout(fixScreenSize, 300);
-
+        setTimeout(function() {
+            fixScreenSize();
+            keepLandscapeLayout();
+        }, 300);
     }
 );
+
+function keepLandscapeLayout() {
+    if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches) {
+        if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(function() {});
+        }
+        if (video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
+            video.webkitExitFullscreen();
+        }
+    }
+}
+
+window.addEventListener("resize", keepLandscapeLayout);
+document.addEventListener("fullscreenchange", keepLandscapeLayout);
+video.addEventListener("webkitbeginfullscreen", function() {
+    if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches &&
+        video.webkitExitFullscreen) {
+        video.webkitExitFullscreen();
+    }
+});
 
 
 /* ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ */
