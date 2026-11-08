@@ -8,6 +8,7 @@ on:
     paths:
       - ".github/workflows/update-playlist.yml"
       - "scripts/check_playlist.py"
+      - "index.html"
 
 permissions:
   contents: write
