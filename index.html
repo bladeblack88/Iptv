@@ -376,12 +376,39 @@ button:disabled { opacity:.35; }
     .controls { gap:4px; }
 }
 
-/* Горизонтальная ориентация: плеер 70%, список каналов 30% в один столбец */
+/* Горизонтальная ориентация: только полноэкранное видео */
 @media screen and (orientation: landscape) {
-    #app { flex-direction: row; }
-    #left { width: 70%; height: 100%; }
-    #right { width: 30%; height: 100%; border-left: 1px solid var(--line); border-top: 0; }
-    #channelList { grid-template-columns: 1fr; }
+    html, body, #app {
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+        margin: 0;
+        overflow: hidden;
+    }
+    #app { display: block; }
+    #left {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        display: block;
+        background: #000;
+    }
+    .brandbar, #now, .controls, #right { display: none !important; }
+    #video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+        max-height: 100%;
+        border: 0;
+        border-radius: 0;
+        margin: 0;
+        padding: 0;
+        object-fit: contain;
+        background: #000;
+    }
+    #video::-webkit-media-controls { display: none !important; }
 }
 
 /* Минималистичная панель управления */
