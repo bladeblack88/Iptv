@@ -458,8 +458,6 @@ button:disabled { opacity:.35; }
             controls
             playsinline
             webkit-playsinline
-            controlslist="nofullscreen noremoteplayback"
-            disablepictureinpicture
             disableremoteplayback
         ></video>
 
@@ -484,6 +482,9 @@ button:disabled { opacity:.35; }
             </button>
             <button class="icon-btn" onclick="showFavorites()" title="Избранные каналы" aria-label="Избранные каналы">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 4.2-8.8 10-8.8 10s-8.8-5.8-8.8-10A4.8 4.8 0 0 1 12 6.2a4.8 4.8 0 0 1 8.8 2.6z"/></svg>
+            </button>
+            <button class="icon-btn" onclick="toggleFullscreen()" title="Во весь экран" aria-label="Во весь экран">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
             </button>
         </div>
 
@@ -544,26 +545,29 @@ var video = document.getElementById("video");
 var app = document.getElementById("app");
 
 
-/* ЗАПРЕТ FULLSCREEN */
+/* ПОЛНОЭКРАННЫЙ РЕЖИМ */
 
-video.addEventListener(
-    "webkitbeginfullscreen",
-    function(event) {
-        event.preventDefault();
+function toggleFullscreen() {
+    if (document.fullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen().catch(function() {});
+        return;
     }
-);
 
-video.addEventListener(
-    "fullscreenchange",
-    function() {
-
-        if (document.fullscreenElement === video) {
-
-            document.exitFullscreen().catch(function() {});
-
-        }
+    if (video.webkitDisplayingFullscreen) {
+        if (video.webkitExitFullscreen) video.webkitExitFullscreen();
+        return;
     }
-);
+
+    if (video.requestFullscreen) {
+        video.requestFullscreen().catch(function() {
+            document.getElementById("status").textContent = "Не удалось открыть полноэкранный режим";
+        });
+    } else if (video.webkitEnterFullscreen) {
+        video.webkitEnterFullscreen();
+    } else {
+        document.getElementById("status").textContent = "Полноэкранный режим не поддерживается этим браузером";
+    }
+}
 
 
 /* РАЗМЕР ЭКРАНА */
