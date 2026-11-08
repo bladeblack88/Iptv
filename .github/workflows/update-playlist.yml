@@ -1,0 +1,45 @@
+name: Refresh shared working IPTV playlist
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+  push:
+    paths:
+      - ".github/workflows/update-playlist.yml"
+      - "scripts/check_playlist.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-working-playlist
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Check streams and build shared playlist
+        run: python scripts/check_playlist.py
+
+      - name: Publish working playlist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add working.m3u
+          if git diff --cached --quiet; then
+            echo "The shared playlist has not changed."
+          else
+            git commit -m "Refresh shared working IPTV playlist"
+            git push
+          fi
