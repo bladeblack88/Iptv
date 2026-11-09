@@ -14,7 +14,12 @@ TIMEOUT = 15
 WORKERS = 16
 REPEAT_CHECKS = 2
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
-EXTRA_CHANNELS = []
+EXTRA_CHANNELS = [
+    (
+        ['#EXTINF:-1 tvg-id="Peretz.ru@SD" group-title="Entertainment",Перец'],
+        "https://zabava-htlive.cdn.ngenix.net/hls/CH_PERETZ/variant.m3u8",
+    ),
+]
 MIN_HD_HEIGHT = 720
 
 def request_bytes(url, limit=8192):
@@ -175,7 +180,15 @@ def main():
     # Keep source ordering, but only output the fastest verified URL per title.
     selected = {id(entry) for entry in working}
     lines = ["#EXTM3U"]
-    for entry in entries:
+    ordered_entries = sorted(
+        entries,
+        key=lambda entry: 0 if re.search(
+            r"перец|peretz",
+            next((line for line in entry[0] if line.startswith("#EXTINF:")), ""),
+            flags=re.I,
+        ) else 1,
+    )
+    for entry in ordered_entries:
         if id(entry) in selected:
             metadata, url = entry
             lines.extend(metadata)
