@@ -979,15 +979,26 @@ video.addEventListener("click", function(event) {
 
 function enterTvFullscreen() {
     if (!document.body.classList.contains("tv-mode")) return;
-    // Android WebView должен показать видео через нативный fullscreen
-    // custom view, иначе аппаратный video surface может стать чёрным.
+
+    // Встроенная веб-страница (официальный эфир) не является HTML5-видео.
+    // Запрос fullscreen у скрытого <video> в этом случае даёт чёрный экран.
+    if (officialPlayer && officialPlayer.style.display !== "none" && officialPlayer.src) {
+        app.classList.add("tv-video-fullscreen");
+        document.body.classList.add("tv-video-fullscreen");
+        return;
+    }
+
+    // Для HTML5-потоков используем нативный video custom view Android WebView.
+    // Если API отсутствует или отклоняет запрос, используем CSS-fullscreen.
     try {
         if (video.requestFullscreen) {
             var request = video.requestFullscreen();
-            if (request && request.catch) request.catch(function() {
-                app.classList.add("tv-video-fullscreen");
-                document.body.classList.add("tv-video-fullscreen");
-            });
+            if (request && request.catch) {
+                request.catch(function() {
+                    app.classList.add("tv-video-fullscreen");
+                    document.body.classList.add("tv-video-fullscreen");
+                });
+            }
             return;
         }
         if (video.webkitEnterFullscreen) {
@@ -995,6 +1006,7 @@ function enterTvFullscreen() {
             return;
         }
     } catch (e) {}
+
     app.classList.add("tv-video-fullscreen");
     document.body.classList.add("tv-video-fullscreen");
     try { video.focus(); } catch (e) {}
