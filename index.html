@@ -346,8 +346,19 @@ button:disabled { opacity:.35; }
 .channel.favorite { color:#f6d98c; }
 .channel.failed { color:#ff8b9b; }
 .channel.unverified { color:#aaa5bb; }
-.channelName { margin-bottom:6px; font-size:13px; letter-spacing:.1px; }
-.channelInfo { color:#8986a4; font-size:10px; }
+.channelName { margin:0; font-size:13px; letter-spacing:.1px; }
+.channelInfo { display:none !important; }
+.channel { position:relative; padding-right:30px; }
+.channelFavoriteHeart {
+    position:absolute; top:8px; right:9px; color:#ff668f;
+    font-size:16px; line-height:1; opacity:.95;
+}
+#favoriteFilterButton {
+    flex:0 0 auto; padding:9px 13px; border-radius:11px;
+    background:linear-gradient(135deg,#7654df,#5937bd);
+    border:1px solid rgba(196,181,253,.4); font-size:11px;
+}
+#video { touch-action:manipulation; }
 #bottomInfo {
     padding:13px 16px; border-top:1px solid var(--line);
     background:#10111d; color:#9995b3; font-size:10px; letter-spacing:.2px;
@@ -588,31 +599,6 @@ body.ios-simulated-fullscreen {
 
         <div id="now">Выберите канал</div>
 
-        <div class="controls icon-controls" aria-label="Управление каналами">
-            <button class="icon-btn" onclick="playPrevious()" title="Предыдущий канал" aria-label="Предыдущий канал">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M19 6l-9 6 9 6z"/></svg>
-            </button>
-            <button class="icon-btn" onclick="playNext()" title="Следующий канал" aria-label="Следующий канал">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5v14M5 6l9 6-9 6z"/></svg>
-            </button>
-            <button class="icon-btn" onclick="retryChannel()" title="Повторить" aria-label="Повторить">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.8 9a7 7 0 0 1 12-2L20 12M4 17v-5h5m10.2 3a7 7 0 0 1-12 2L4 12"/></svg>
-            </button>
-            <button class="icon-btn" onclick="toggleFavorite()" title="Добавить в избранное" aria-label="Добавить в избранное">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg>
-            </button>
-            <span class="control-separator" aria-hidden="true"></span>
-            <button class="icon-btn" onclick="showAllChannels()" title="Все каналы" aria-label="Все каналы">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button class="icon-btn" onclick="showFavorites()" title="Избранные каналы" aria-label="Избранные каналы">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 4.2-8.8 10-8.8 10s-8.8-5.8-8.8-10A4.8 4.8 0 0 1 12 6.2a4.8 4.8 0 0 1 8.8 2.6z"/></svg>
-            </button>
-            <button class="icon-btn" onclick="toggleFullscreen()" title="Во весь экран" aria-label="Во весь экран">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            </button>
-        </div>
-
         <div id="status">
             Загрузка списка каналов...
         </div>
@@ -624,9 +610,9 @@ body.ios-simulated-fullscreen {
         <div class="library-head">
             <div>
                 <div class="library-title">Телеканалы</div>
-                <div class="library-subtitle">Выберите канал для просмотра</div>
+                <div class="library-subtitle" id="librarySubtitle">Все каналы</div>
             </div>
-            <div class="library-count" id="libraryCount">ЗАГРУЗКА</div>
+            <button id="favoriteFilterButton" type="button" onclick="toggleChannelFilter()">Избранные</button>
         </div>
 
         <div id="channelList"></div>
@@ -709,6 +695,34 @@ video.addEventListener("webkitendfullscreen", function() {
     setTimeout(resumePlayback, 900);
 });
 
+
+/* Двойное нажатие по видео переключает полноэкранный режим */
+var videoTapTimer = null;
+var videoLastTap = 0;
+
+video.addEventListener("click", function(event) {
+    var now = Date.now();
+    if (videoTapTimer && now - videoLastTap < 350) {
+        clearTimeout(videoTapTimer);
+        videoTapTimer = null;
+        videoLastTap = 0;
+        toggleFullscreen();
+        if (event && event.preventDefault) event.preventDefault();
+        return;
+    }
+    videoLastTap = now;
+    videoTapTimer = setTimeout(function() {
+        videoTapTimer = null;
+    }, 350);
+});
+
+video.addEventListener("dblclick", function(event) {
+    if (event) event.preventDefault();
+    if (videoTapTimer) clearTimeout(videoTapTimer);
+    videoTapTimer = null;
+    videoLastTap = 0;
+    toggleFullscreen();
+});
 
 /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
 
@@ -1121,32 +1135,46 @@ function renderChannels() {
 
         var name = document.createElement("span");
         name.className = "channelName";
-        name.appendChild(document.createTextNode(
-            (isFavorite(channel.url) ? "★ " : "") + channel.name
-        ));
+        name.appendChild(document.createTextNode(channel.name));
         textWrap.appendChild(name);
-
-        var info = document.createElement("span");
-        info.className = "channelInfo";
-        info.appendChild(document.createTextNode(
-            channel.group + " · " +
-            (channel.checkStatus === "working" ? "Работает" :
-             channel.checkStatus === "failed" ? "Недоступен" : "Не проверен")
-        ));
-        textWrap.appendChild(info);
         item.appendChild(textWrap);
+
+        if (isFavorite(channel.url)) {
+            var heart = document.createElement("span");
+            heart.className = "channelFavoriteHeart";
+            heart.textContent = "♥";
+            heart.setAttribute("aria-label", "В избранном");
+            item.appendChild(heart);
+        }
 
         item.setAttribute("data-index", i);
 
-        item.onclick = function() {
+        item.onclick = function(event) {
+            var channelItem = this;
+            var index = parseInt(channelItem.getAttribute("data-index"), 10);
+            var now = Date.now();
 
-            playChannel(
-                parseInt(
-                    this.getAttribute("data-index"),
-                    10
-                )
-            );
+            if (channelItem._tapTimer && now - channelItem._lastTap < 350) {
+                clearTimeout(channelItem._tapTimer);
+                channelItem._tapTimer = null;
+                channelItem._lastTap = 0;
+                toggleFavoriteByIndex(index);
+                return;
+            }
 
+            channelItem._lastTap = now;
+            channelItem._tapTimer = setTimeout(function() {
+                channelItem._tapTimer = null;
+                playChannel(index);
+            }, 260);
+        };
+
+        item.ondblclick = function(event) {
+            if (event) event.preventDefault();
+            if (this._tapTimer) clearTimeout(this._tapTimer);
+            this._tapTimer = null;
+            this._lastTap = 0;
+            toggleFavoriteByIndex(parseInt(this.getAttribute("data-index"), 10));
         };
 
         list.appendChild(item);
@@ -1158,8 +1186,10 @@ function renderChannels() {
         " · ★ Избранное: " + favorites.length +
         " · Исключено: " + excludedChannels.length;
 
-    var count = document.getElementById("libraryCount");
-    if (count) count.textContent = channels.length + " КАНАЛОВ";
+    var filterButton = document.getElementById("favoriteFilterButton");
+    var subtitle = document.getElementById("librarySubtitle");
+    if (filterButton) filterButton.textContent = showOnlyFavorites ? "Все каналы" : "Избранные";
+    if (subtitle) subtitle.textContent = showOnlyFavorites ? "Избранные каналы" : "Все каналы";
 
     // Возвращаем список на прежнюю позицию, даже если выбран канал внизу.
     list.scrollTop = savedScrollTop;
@@ -1345,21 +1375,29 @@ function toggleFavorite() {
 }
 
 
-function showFavorites() {
-
-    showOnlyFavorites = true;
-
+function toggleFavoriteByIndex(index) {
+    if (index < 0 || !channels[index]) return;
+    var url = channels[index].url;
+    var favoriteIndex = favorites.indexOf(url);
+    if (favoriteIndex === -1) favorites.push(url);
+    else favorites.splice(favoriteIndex, 1);
+    saveFavorites();
     renderChannels();
-
 }
 
+function toggleChannelFilter() {
+    showOnlyFavorites = !showOnlyFavorites;
+    renderChannels();
+}
+
+function showFavorites() {
+    showOnlyFavorites = true;
+    renderChannels();
+}
 
 function showAllChannels() {
-
     showOnlyFavorites = false;
-
     renderChannels();
-
 }
 
 
