@@ -140,6 +140,21 @@ class RemoteControlInstrumentedTest {
     }
 
     @Test
+    fun movingRightFromPlayerToListDoesNotToggleFavorite() {
+        evaluate("""
+            document.body.tabIndex = 0;
+            document.body.focus();
+            true
+        """.trimIndent())
+        press(KeyEvent.KEYCODE_DPAD_RIGHT)
+        assertEquals("0", evaluate("favoriteToggleCount"))
+        assertEquals("0", evaluate("""
+            Array.from(document.querySelectorAll('#channelList .channel'))
+              .findIndex(function(el) { return el.classList.contains('tv-focused'); })
+        """.trimIndent()))
+    }
+
+    @Test
     fun pressingOkTwiceOnSameChannelRequestsFullscreen() {
         evaluate("document.querySelector('#channelList .channel').focus()")
         press(KeyEvent.KEYCODE_DPAD_CENTER)
