@@ -638,6 +638,30 @@ body.tv-mode button:focus-visible, body.tv-mode input:focus-visible, body.tv-mod
 body.tv-mode .library-head { min-height:62px; padding:10px 16px; }
 body.tv-mode .library-title { font-size:20px; }
 body.tv-mode .library-subtitle { font-size:12px; }
+
+/* Полноэкранный просмотр на Android TV без перезапуска видеопотока. */
+body.tv-mode #app.tv-video-fullscreen {
+    position:fixed !important; inset:0 !important;
+    width:100vw !important; height:100vh !important; min-height:100vh !important;
+    z-index:2147483000 !important; overflow:hidden !important; background:#000 !important;
+}
+body.tv-mode #app.tv-video-fullscreen #left {
+    width:100% !important; height:100% !important; padding:0 !important;
+    margin:0 !important; gap:0 !important; background:#000 !important;
+}
+body.tv-mode #app.tv-video-fullscreen #right,
+body.tv-mode #app.tv-video-fullscreen .brandbar,
+body.tv-mode #app.tv-video-fullscreen #now,
+body.tv-mode #app.tv-video-fullscreen #status { display:none !important; }
+body.tv-mode #app.tv-video-fullscreen #video,
+body.tv-mode #app.tv-video-fullscreen #officialPlayer {
+    display:block !important; width:100% !important; height:100% !important;
+    min-height:100% !important; flex:1 1 100% !important;
+    border:0 !important; border-radius:0 !important; margin:0 !important;
+    object-fit:contain !important; background:#000 !important;
+}
+body.tv-mode #app.tv-video-fullscreen #officialPlayer { position:absolute; inset:0; }
+body.tv-mode.tv-video-fullscreen { overflow:hidden !important; }
 @media (max-width:900px) {
   body.tv-mode #left { width:58% !important; }
   body.tv-mode #right { width:42% !important; }
@@ -819,11 +843,17 @@ video.addEventListener("webkitendfullscreen", function() {
 });
 
 
-/* Двойное нажатие по видео переключает полноэкранный режим */
+/* На Android TV одно нажатие по видео возвращает список каналов. */
 var videoTapTimer = null;
 var videoLastTap = 0;
 
 video.addEventListener("click", function(event) {
+    if (document.body.classList.contains("tv-mode") &&
+        app.classList.contains("tv-video-fullscreen")) {
+        toggleFullscreen();
+        if (event && event.preventDefault) event.preventDefault();
+        return;
+    }
     var now = Date.now();
     if (videoTapTimer && now - videoLastTap < 350) {
         clearTimeout(videoTapTimer);
@@ -841,7 +871,29 @@ video.addEventListener("click", function(event) {
 
 /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
 
+function enterTvFullscreen() {
+    if (!document.body.classList.contains("tv-mode")) return;
+    app.classList.add("tv-video-fullscreen");
+    document.body.classList.add("tv-video-fullscreen");
+    try { video.focus(); } catch (e) {}
+}
+
+function exitTvFullscreen() {
+    app.classList.remove("tv-video-fullscreen");
+    document.body.classList.remove("tv-video-fullscreen");
+    if (activeIndex >= 0) {
+        var activeItem = document.querySelector('#channelList [data-index="' + activeIndex + '"]');
+        if (activeItem) activeItem.focus();
+    }
+}
+
 function toggleFullscreen() {
+    if (document.body.classList.contains("tv-mode")) {
+        if (app.classList.contains("tv-video-fullscreen")) exitTvFullscreen();
+        else enterTvFullscreen();
+        return;
+    }
+
     // На старом iOS Safari нативный fullscreen видео при выходе часто
     // ставит HLS-поток на паузу. Используем полноэкранный слой страницы,
     // не переключая сам элемент video в нативный режим.
@@ -1111,10 +1163,17 @@ function parseM3U(data) {
 function removeExcludedFromPlaylist() {
 
     channels = channels.filter(function(channel) {
-
         return !isExcluded(channel.url);
-
     });
+
+    // При обновлении плейлиста сохраняем текущий канал по адресу потока,
+    // поскольку его индекс в новом списке может измениться.
+    if (activeUrl) {
+        activeIndex = channels.findIndex(function(channel) {
+            return channel.url === activeUrl;
+        });
+        if (activeIndex === -1) stopPlayer();
+    }
 
     renderChannels();
 
@@ -1191,6 +1250,9 @@ function renderChannels() {
 
     // Сохраняем позицию прокрутки до полной перерисовки списка.
     var savedScrollTop = list.scrollTop;
+    var hadChannelFocus = document.activeElement &&
+        document.activeElement.classList &&
+        document.activeElement.classList.contains("channel");
 
     list.innerHTML = "";
 
@@ -1267,7 +1329,13 @@ function renderChannels() {
         item.onclick = function(event) {
             var channelItem = this;
             if (document.body.classList.contains("tv-mode")) {
-                playChannel(parseInt(channelItem.getAttribute("data-index"), 10));
+                var selectedIndex = parseInt(channelItem.getAttribute("data-index"), 10);
+                if (selectedIndex === activeIndex && activeUrl) {
+                    toggleFullscreen();
+                } else {
+                    playChannel(selectedIndex);
+                    enterTvFullscreen();
+                }
                 return;
             }
             var index = parseInt(channelItem.getAttribute("data-index"), 10);
@@ -1306,8 +1374,16 @@ function renderChannels() {
     if (filterButton) filterButton.textContent = showOnlyFavorites ? "Все каналы" : "Избранные";
     if (subtitle) subtitle.textContent = showOnlyFavorites ? "Избранные каналы" : "Все каналы";
 
-    // Возвращаем список на прежнюю позицию, даже если выбран канал внизу.
+    // Сохраняем прокрутку и удерживаем текущий канал в видимой области.
     list.scrollTop = savedScrollTop;
+    if (document.body.classList.contains("tv-mode") && activeIndex >= 0) {
+        var activeItem = list.querySelector('[data-index="' + activeIndex + '"]');
+        if (activeItem) {
+            activeItem.classList.add("tv-focused");
+            activeItem.scrollIntoView({block:"nearest"});
+            if (hadChannelFocus || document.activeElement === document.body) activeItem.focus();
+        }
+    }
 
 }
 
@@ -1362,12 +1438,28 @@ function playChannel(index) {
         hlsPlayer = new Hls({
             enableWorker: true,
             lowLatencyMode: false,
-            backBufferLength: 30
+            // Умеренный запас буфера сглаживает кратковременные просадки Wi-Fi.
+            maxBufferLength: 45,
+            maxMaxBufferLength: 75,
+            maxBufferSize: 50 * 1000 * 1000,
+            backBufferLength: 15,
+            maxBufferHole: 0.5,
+            highBufferWatchdogPeriod: 2,
+            nudgeOffset: 0.1,
+            nudgeMaxRetry: 5,
+            capLevelToPlayerSize: true,
+            startLevel: -1,
+            abrEwmaDefaultEstimate: 5000000,
+            manifestLoadingMaxRetry: 4,
+            levelLoadingMaxRetry: 4,
+            fragLoadingMaxRetry: 6,
+            fragLoadingRetryDelay: 1000,
+            fragLoadingMaxRetryTimeout: 64000
         });
 
         var currentHls = hlsPlayer;
-        currentHls.loadSource(channel.url);
         currentHls.attachMedia(video);
+        currentHls.loadSource(channel.url);
 
         currentHls.on(Hls.Events.MANIFEST_PARSED, function() {
             if (hlsPlayer !== currentHls) return;
@@ -2001,6 +2093,17 @@ function restoreExcluded() {
         var items = channelItems();
         var active = document.activeElement;
         var inChannel = active && active.classList && active.classList.contains("channel");
+        var tvFullscreen = app.classList.contains("tv-video-fullscreen");
+        if (tvFullscreen && (key === "Backspace" || key === "Escape" || code === 4)) {
+            event.preventDefault();
+            exitTvFullscreen();
+            return;
+        }
+        if (tvFullscreen && (key === "Enter" || key === " " || code === 23 || code === 66)) {
+            event.preventDefault();
+            exitTvFullscreen();
+            return;
+        }
         if (key === "ArrowDown" || code === 20) {
             event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex + 1 : 0);
         } else if (key === "ArrowUp" || code === 19) {
