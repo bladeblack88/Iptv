@@ -686,14 +686,21 @@ body.tv-mode #app.tv-video-fullscreen #right,
 body.tv-mode #app.tv-video-fullscreen .brandbar,
 body.tv-mode #app.tv-video-fullscreen #now,
 body.tv-mode #app.tv-video-fullscreen #status { display:none !important; }
-body.tv-mode #app.tv-video-fullscreen #video,
-body.tv-mode #app.tv-video-fullscreen #officialPlayer {
+/* Показываем только реально активный плеер: пустой iframe не должен
+   перекрывать HTML5-видео и создавать чёрный экран. */
+body.tv-mode #app.tv-video-fullscreen #video {
     display:block !important; width:100% !important; height:100% !important;
     min-height:100% !important; flex:1 1 100% !important;
     border:0 !important; border-radius:0 !important; margin:0 !important;
     object-fit:contain !important; background:#000 !important;
 }
-body.tv-mode #app.tv-video-fullscreen #officialPlayer { position:absolute; inset:0; }
+body.tv-mode #app.tv-video-fullscreen #officialPlayer { display:none !important; }
+body.tv-mode.tv-iframe-fullscreen #app.tv-video-fullscreen #video { display:none !important; }
+body.tv-mode.tv-iframe-fullscreen #app.tv-video-fullscreen #officialPlayer {
+    display:block !important; position:absolute; inset:0;
+    width:100% !important; height:100% !important; border:0 !important;
+    border-radius:0 !important; margin:0 !important; background:#000 !important;
+}
 body.tv-mode.tv-video-fullscreen { overflow:hidden !important; }
 @media (max-width:900px) {
   body.tv-mode #left { width:58% !important; }
@@ -983,6 +990,8 @@ function enterTvFullscreen() {
     // Не вызываем native video fullscreen: на некоторых Android TV он
     // оставляет звук, но скрывает аппаратную видеоповерхность (чёрный экран).
     // CSS-режим не перезапускает поток и работает также для iframe-плеера.
+    var useIframe = officialPlayer && officialPlayer.style.display !== "none" && !!officialPlayer.src;
+    document.body.classList.toggle("tv-iframe-fullscreen", !!useIframe);
     app.classList.add("tv-video-fullscreen");
     document.body.classList.add("tv-video-fullscreen");
 }
@@ -996,7 +1005,7 @@ function exitTvFullscreen() {
         }
     } catch (e) {}
     app.classList.remove("tv-video-fullscreen");
-    document.body.classList.remove("tv-video-fullscreen");
+    document.body.classList.remove("tv-video-fullscreen", "tv-iframe-fullscreen");
     if (activeIndex >= 0) {
         var activeItem = document.querySelector('#channelList [data-index="' + activeIndex + '"]');
         if (activeItem) activeItem.focus();
@@ -1006,7 +1015,7 @@ function exitTvFullscreen() {
 document.addEventListener("fullscreenchange", function() {
     if (!document.fullscreenElement) {
         app.classList.remove("tv-video-fullscreen");
-        document.body.classList.remove("tv-video-fullscreen");
+        document.body.classList.remove("tv-video-fullscreen", "tv-iframe-fullscreen");
     }
 });
 
@@ -2231,6 +2240,18 @@ function restoreExcluded() {
         target.focus();
         target.scrollIntoView({block:"nearest"});
     }
+    function leaveTvFullscreenOnRemoteInput(event) {
+        if (!document.body.classList.contains("tv-mode") ||
+            !app.classList.contains("tv-video-fullscreen")) return;
+        // Любое нажатие/клик закрывает только полноэкранную раскладку,
+        // не останавливая и не перезапуская поток.
+        if (event && event.type === "keydown" && (event.key === "Shift" || event.key === "Control" || event.key === "Alt")) return;
+        if (event && event.cancelable) event.preventDefault();
+        exitTvFullscreen();
+        if (activeIndex >= 0) focusChannel(focusedChannelIndex);
+    }
+    window.addEventListener("keydown", leaveTvFullscreenOnRemoteInput, true);
+    window.addEventListener("click", leaveTvFullscreenOnRemoteInput, true);
     document.addEventListener("keydown", function(event) {
         if (!document.body.classList.contains("tv-mode")) return;
         var key = event.key, code = event.keyCode;
