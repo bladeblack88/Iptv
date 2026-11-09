@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "IPTVPlayer"
-include(":app")
+include(":app", ":matrixapp")
