@@ -1215,7 +1215,7 @@ function loadPlaylist() {
                     stopAutoCheck();
                     channels = parsed;
                     removeExcludedFromPlaylist();
-                    loadEpg();
+
                     document.getElementById("status").textContent =
                         "Загружено каналов: " + channels.length;
                     return;
@@ -1304,116 +1304,6 @@ function parseM3U(data) {
 
     return result;
 
-}
-
-
-/* ЗАГРУЗКА EPG: XMLTV */
-var epgProgramsById = Object.create(null);
-var epgLoaded = false;
-var epgLoadFailed = false;
-var EPG_URL = "https://iptvx.one/epg/epg.xml.gz";
-
-function parseXmltvTime(value) {
-    var m = String(value || "").match(/^(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})\\s*([+-]\\d{4}|Z)?/);
-    if (!m) return NaN;
-    var zone = m[7] || "+0000";
-    var iso = m[1]+"-"+m[2]+"-"+m[3]+"T"+m[4]+":"+m[5]+":"+m[6];
-    if (zone === "Z") iso += "Z";
-    else iso += zone.slice(0,3)+":"+zone.slice(3,5);
-    return Date.parse(iso);
-}
-
-function refreshChannelPrograms() {
-    var now = Date.now();
-    channels.forEach(function(channel) {
-        var entries = channel.epgId && epgProgramsById[channel.epgId];
-        channel.currentProgram = "";
-        if (!entries) return;
-        for (var i = 0; i < entries.length; i++) {
-            if (entries[i].start <= now && entries[i].stop > now) {
-                channel.currentProgram = entries[i].title;
-                break;
-            }
-        }
-    });
-    if (typeof renderChannels === "function") renderChannels();
-}
-
-function loadEpg() {
-    fetch(EPG_URL, {cache:"no-store"})
-        .then(function(response) {
-            if (!response.ok) throw new Error("HTTP " + response.status);
-            return response.arrayBuffer();
-        })
-        .then(function(buffer) {
-            var bytes = new Uint8Array(buffer);
-            var isGzip = bytes.length > 2 && bytes[0] === 31 && bytes[1] === 139;
-            if (!isGzip) return new TextDecoder("utf-8").decode(buffer);
-            if (typeof DecompressionStream === "undefined") throw new Error("gzip не поддерживается");
-            return new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-        })
-        .then(function(xmlText) {
-            var xml = new DOMParser().parseFromString(xmlText, "application/xml");
-            if (xml.querySelector("parsererror")) throw new Error("Некорректный XMLTV");
-            var wanted = Object.create(null);
-            var playlistChannelsByName = Object.create(null);
-            var xmlChannelIds = Object.create(null);
-            function normalizeEpgName(value) {
-                return String(value || "").toLowerCase()
-                    .replace(/\b(hd|uhd|4k|sd|1080p|720p|576p|480p)\b/g, "")
-                    .replace(/[^\p{L}\p{N}]+/gu, "");
-            }
-            channels.forEach(function(channel) {
-                if (channel.epgId) wanted[channel.epgId] = true;
-                var key = normalizeEpgName(channel.name);
-                if (key) playlistChannelsByName[key] = channel;
-            });
-            var xmlChannels = xml.getElementsByTagName("channel");
-            for (var c = 0; c < xmlChannels.length; c++) {
-                xmlChannelIds[xmlChannels[c].getAttribute("id")] = true;
-            }
-            for (var c = 0; c < xmlChannels.length; c++) {
-                var xmlChannel = xmlChannels[c];
-                var xmlId = xmlChannel.getAttribute("id");
-                var displayNames = xmlChannel.getElementsByTagName("display-name");
-                for (var dn = 0; dn < displayNames.length; dn++) {
-                    var normalized = normalizeEpgName(displayNames[dn].textContent);
-                    var matchedChannel = normalized && playlistChannelsByName[normalized];
-                    if (matchedChannel && (!matchedChannel.epgId || !xmlChannelIds[matchedChannel.epgId])) {
-                        matchedChannel.epgId = xmlId;
-                        wanted[xmlId] = true;
-                    }
-                }
-            }
-            var programmes = xml.getElementsByTagName("programme");
-            var now = Date.now();
-            for (var i = 0; i < programmes.length; i++) {
-                var node = programmes[i];
-                var id = node.getAttribute("channel");
-                if (!wanted[id]) continue;
-                var start = parseXmltvTime(node.getAttribute("start"));
-                var stop = parseXmltvTime(node.getAttribute("stop"));
-                if (!isFinite(start) || !isFinite(stop) || stop <= now - 3600000 || start > now + 86400000) continue;
-                var titleNode = node.getElementsByTagName("title")[0];
-                var title = titleNode ? (titleNode.textContent || "").trim() : "";
-                if (!title) continue;
-                if (!epgProgramsById[id]) epgProgramsById[id] = [];
-                epgProgramsById[id].push({start:start, stop:stop, title:title});
-            }
-            Object.keys(epgProgramsById).forEach(function(id) {
-                epgProgramsById[id].sort(function(a,b) { return a.start-b.start; });
-            });
-            epgLoaded = true;
-            epgLoadFailed = false;
-            refreshChannelPrograms();
-        })
-        .catch(function(error) {
-            console.warn("EPG не загружена:", error);
-            epgLoaded = false;
-            epgLoadFailed = true;
-            channels.forEach(function(channel) { channel.currentProgram = ""; });
-            if (typeof renderChannels === "function") renderChannels();
-        });
 }
 
 
@@ -1574,10 +1464,6 @@ function renderChannels() {
         name.className = "channelName";
         name.textContent = channel.name;
         textWrap.appendChild(name);
-        var program = document.createElement("span");
-        program.className = "channelProgram";
-        program.textContent = channel.currentProgram || (epgLoadFailed ? "Телепрограмма недоступна" : (epgLoaded ? "Программа не найдена" : "Загрузка программы…"));
-        textWrap.appendChild(program);
         item.appendChild(textWrap);
         var heart = document.createElement("span");
         heart.className = "channelFavoriteHeart";
