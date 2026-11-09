@@ -43,19 +43,9 @@ class MainActivity : Activity() {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
         webView.webChromeClient = WebChromeClient()
+        // Keep navigation inside WebView so embedded players and stream pages load in-app.
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val host = request.url.host ?: return false
-                return if (host == "bladeblack88.github.io" || host.endsWith(".github.io")) {
-                    false
-                } else {
-                    try {
-                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, request.url))
-                    } catch (_: Exception) {
-                    }
-                    true
-                }
-            }
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
         }
 
         setContentView(webView)
