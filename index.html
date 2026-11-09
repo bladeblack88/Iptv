@@ -802,8 +802,8 @@ if (isAndroidTv || isSmartTvBrowser) {
 
 /* ОСНОВНЫЕ ПЕРЕМЕННЫЕ */
 
-var playlistUrl =
-    "https://raw.githubusercontent.com/bladeblack88/Iptv/main/working.m3u?v=20261109";
+var playlistUrl = new URL("working.m3u?v=20261109", document.baseURI).toString();
+var playlistFallbackUrl = "https://raw.githubusercontent.com/bladeblack88/Iptv/main/working.m3u?v=20261109";
 
 var channels = [];
 var favorites = [];
@@ -1146,57 +1146,51 @@ function isExcluded(url) {
 /* ЗАГРУЗКА ПЛЕЙЛИСТА */
 
 function loadPlaylist() {
+    var sources = [playlistUrl, playlistFallbackUrl];
+    var sourceIndex = 0;
 
-    var xhr = new XMLHttpRequest();
-
-    xhr.open("GET", playlistUrl, true);
-    xhr.timeout = 30000;
-
-    xhr.onreadystatechange = function() {
-
-        if (xhr.readyState === 4) {
-
-            if (xhr.status === 200) {
-
-                stopAutoCheck();
-
-                channels = parseM3U(xhr.responseText);
-
-                removeExcludedFromPlaylist();
-                loadEpg();
-
-                document.getElementById("status").textContent =
-                    "Загружено каналов: " + channels.length;
-
-            } else {
-
-                document.getElementById("status").textContent =
-                    "Общий плейлист ещё не опубликован. GitHub выполняет первую проверку — попробуйте обновить страницу позже.";
-
-            }
-
+    function tryNextSource(lastError) {
+        if (sourceIndex >= sources.length) {
+            document.getElementById("status").textContent =
+                "Не удалось загрузить список каналов. Проверьте интернет на ТВ и доступ к GitHub. " +
+                (lastError ? String(lastError).slice(0, 90) : "");
+            return;
         }
 
-    };
+        var source = sources[sourceIndex++];
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", source, true);
+        xhr.timeout = 20000;
 
-    xhr.onerror = function() {
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== 4) return;
 
-        document.getElementById("status").textContent =
-            "Не удалось загрузить общий плейлист. Проверьте соединение и обновите страницу.";
+            if (xhr.status === 200) {
+                var body = xhr.responseText || "";
+                var parsed = body.indexOf("#EXTM3U") !== -1 ? parseM3U(body) : [];
+                if (parsed.length > 0) {
+                    stopAutoCheck();
+                    channels = parsed;
+                    removeExcludedFromPlaylist();
+                    loadEpg();
+                    document.getElementById("status").textContent =
+                        "Загружено каналов: " + channels.length;
+                    return;
+                }
+                tryNextSource("Плейлист пустой или имеет неверный формат");
+            } else {
+                tryNextSource("HTTP " + xhr.status);
+            }
+        };
 
-    };
+        xhr.onerror = function() { tryNextSource("Ошибка сети"); };
+        xhr.ontimeout = function() { tryNextSource("Тайм-аут загрузки"); };
+        xhr.send(null);
+    }
 
-    xhr.ontimeout = function() {
-
-        document.getElementById("status").textContent =
-            "Загрузка общего плейлиста заняла слишком много времени.";
-
-    };
-
-    xhr.send(null);
-
+    document.getElementById("status").textContent = "Загружаем список телеканалов…";
+    tryNextSource("");
 }
-
 
 /* РАЗБОР M3U */
 
