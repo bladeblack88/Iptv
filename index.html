@@ -3,6 +3,8 @@
 <html lang="ru">
 <head>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dashjs@4.7.4/dist/dash.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.8.0/dist/mpegts.js"></script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -355,6 +357,8 @@ button:disabled { opacity:.35; }
     border:1px solid rgba(167,139,250,.35); border-left:3px solid var(--accent); color:#fff;
 }
 .channel.favorite { color:#f6d98c; }
+.channel-filter-entry { position:sticky; top:0; z-index:3; min-height:58px !important; margin:4px 3px 9px !important; border:1px solid rgba(246,217,140,.38) !important; background:linear-gradient(110deg,rgba(124,92,231,.34),rgba(246,217,140,.09)) !important; color:#ffe6a3 !important; font-weight:800; box-shadow:0 5px 18px rgba(0,0,0,.22); }
+.channel-filter-entry .channelLogo { background:linear-gradient(145deg,#8a6a2c,#5b4521); color:#ffe6a3; }
 .channel.failed { color:#ff8b9b; }
 .channel.unverified { color:#aaa5bb; }
 .channelName { margin:0; font-size:13px; letter-spacing:.1px; }
@@ -365,11 +369,6 @@ button:disabled { opacity:.35; }
     font-size:16px; line-height:1; opacity:.95;
 }
 .channelFavoriteHeart.is-not-favorite { color:rgba(190,180,215,.42); }
-#favoriteFilterButton {
-    flex:0 0 auto; padding:9px 13px; border-radius:11px;
-    background:linear-gradient(135deg,#7654df,#5937bd);
-    border:1px solid rgba(196,181,253,.4); font-size:11px;
-}
 #video { touch-action:manipulation; }
 #bottomInfo {
     padding:13px 16px; border-top:1px solid var(--line);
@@ -465,12 +464,6 @@ button:disabled { opacity:.35; }
     }
     .library-title { font-size:12px; }
     .library-subtitle { display:none; }
-    #favoriteFilterButton {
-        display:block !important;
-        padding:7px 10px;
-        font-size:10px;
-        white-space:nowrap;
-    }
     #bottomInfo { display:none !important; }
     #channelList {
         display: block;
@@ -721,7 +714,6 @@ body.tv-mode.tv-video-fullscreen { overflow:hidden !important; }
                 <div class="library-title">Телеканалы</div>
                 <div class="library-subtitle" id="librarySubtitle">Все каналы</div>
             </div>
-            <button id="favoriteFilterButton" type="button" onclick="toggleChannelFilter()">Избранные</button>
         </div>
 
         <div id="channelList"></div>
@@ -1281,96 +1273,78 @@ function buildCategories() {
 /* СПИСОК КАНАЛОВ */
 
 function renderChannels() {
-
     var list = document.getElementById("channelList");
-
-    // Сохраняем позицию прокрутки до полной перерисовки списка.
     var savedScrollTop = list.scrollTop;
     var focusedElement = document.activeElement;
-    if (focusedElement && focusedElement.classList && focusedElement.classList.contains("channel")) {
+    if (focusedElement && focusedElement.classList && focusedElement.classList.contains("channel") && !focusedElement.classList.contains("channel-filter-entry")) {
         var oldFocusedIndex = parseInt(focusedElement.getAttribute("data-index"), 10);
         if (channels[oldFocusedIndex]) tvFocusedChannelUrl = channels[oldFocusedIndex].url;
+    } else if (focusedElement && focusedElement.classList && focusedElement.classList.contains("channel-filter-entry")) {
+        tvFocusedChannelUrl = null;
     }
-
     list.innerHTML = "";
+    var pinned = document.createElement("div");
+    pinned.className = "channel channel-filter-entry";
+    pinned.tabIndex = 0;
+    pinned.setAttribute("role", "button");
+    var pinnedLogo = document.createElement("div");
+    pinnedLogo.className = "channelLogo";
+    pinnedLogo.textContent = showOnlyFavorites ? "←" : "★";
+    pinned.appendChild(pinnedLogo);
+    var pinnedText = document.createElement("div");
+    pinnedText.className = "channelText";
+    var pinnedName = document.createElement("span");
+    pinnedName.className = "channelName";
+    pinnedName.textContent = showOnlyFavorites ? "Все каналы · Назад" : "Избранное · " + favorites.length;
+    pinnedText.appendChild(pinnedName);
+    pinned.appendChild(pinnedText);
+    pinned.onclick = function() {
+        showOnlyFavorites = !showOnlyFavorites;
+        tvFocusedChannelUrl = null;
+        renderChannels();
+    };
+    list.appendChild(pinned);
 
     for (var i = 0; i < channels.length; i++) {
-
         var channel = channels[i];
-
-        if (
-            showOnlyFavorites &&
-            !isFavorite(channel.url)
-        ) {
-            continue;
-        }
-
+        if (showOnlyFavorites && !isFavorite(channel.url)) continue;
         var item = document.createElement("div");
-
         item.className = "channel";
-        item.setAttribute("tabindex", "0");
-
-        if (i === activeIndex) {
-            item.className += " active";
-        }
-
-        if (isFavorite(channel.url)) {
-            item.className += " favorite";
-        }
-
-        if (channel.checkStatus === "failed") {
-            item.className += " failed";
-        }
-
-        if (channel.checkStatus === "unverified") {
-            item.className += " unverified";
-        }
-
+        item.tabIndex = 0;
+        if (i === activeIndex) item.className += " active";
+        if (isFavorite(channel.url)) item.className += " favorite";
+        if (channel.checkStatus === "failed") item.className += " failed";
+        if (channel.checkStatus === "unverified") item.className += " unverified";
         var logo = document.createElement("div");
         logo.className = "channelLogo";
-
         if (channel.logo) {
             var image = document.createElement("img");
             image.src = channel.logo;
             image.alt = "";
             image.loading = "lazy";
             image.referrerPolicy = "no-referrer";
-            image.onerror = function() {
-                this.style.display = "none";
-                this.parentNode.textContent = "▶";
-            };
+            image.onerror = function() { this.style.display = "none"; this.parentNode.textContent = "▶"; };
             logo.appendChild(image);
-        } else {
-            logo.textContent = "▶";
-        }
-
+        } else logo.textContent = "▶";
         item.appendChild(logo);
-
         var textWrap = document.createElement("div");
         textWrap.className = "channelText";
-
         var name = document.createElement("span");
         name.className = "channelName";
-        name.appendChild(document.createTextNode(channel.name));
+        name.textContent = channel.name;
         textWrap.appendChild(name);
         item.appendChild(textWrap);
-
         var heart = document.createElement("span");
         heart.className = "channelFavoriteHeart";
         heart.textContent = isFavorite(channel.url) ? "♥" : "♡";
         heart.setAttribute("aria-label", isFavorite(channel.url) ? "В избранном" : "Не в избранном");
         if (!isFavorite(channel.url)) heart.className += " is-not-favorite";
         item.appendChild(heart);
-
         item.setAttribute("data-index", i);
-
-        item.onclick = function(event) {
+        item.onclick = function() {
             var channelItem = this;
             var index = parseInt(channelItem.getAttribute("data-index"), 10);
             var now = Date.now();
-
-            // Одно нажатие запускает канал; быстрое повторное нажатие
-            // добавляет/удаляет его из избранного, включая пульт Google TV.
             if (channelItem._tapTimer && now - channelItem._lastTap < 500) {
                 clearTimeout(channelItem._tapTimer);
                 channelItem._tapTimer = null;
@@ -1378,55 +1352,43 @@ function renderChannels() {
                 toggleFavoriteByIndex(index);
                 return;
             }
-
             channelItem._lastTap = now;
             channelItem._tapTimer = setTimeout(function() {
                 channelItem._tapTimer = null;
                 if (index !== activeIndex || !activeUrl) playChannel(index);
             }, 360);
         };
-
         list.appendChild(item);
-
     }
-
-    document.getElementById("bottomInfo").textContent =
-        "📺 Каналов: " + channels.length +
-        " · ★ Избранное: " + favorites.length +
-        " · Исключено: " + excludedChannels.length;
-
-    var filterButton = document.getElementById("favoriteFilterButton");
+    document.getElementById("bottomInfo").textContent = "📺 Каналов: " + channels.length + " · ★ Избранное: " + favorites.length + " · Исключено: " + excludedChannels.length;
     var subtitle = document.getElementById("librarySubtitle");
-    if (filterButton) filterButton.textContent = showOnlyFavorites ? "Все каналы" : "Избранные";
     if (subtitle) subtitle.textContent = showOnlyFavorites ? "Избранные каналы" : "Все каналы";
-
-    // Восстанавливаем ровно один фокус по URL, а не подсвечиваем первый
-    // элемент вместе с активным каналом после каждой перерисовки.
     list.scrollTop = savedScrollTop;
     if (document.body.classList.contains("tv-mode")) {
         var visibleItems = Array.prototype.slice.call(list.querySelectorAll(".channel"));
         var focusItem = null;
         if (tvFocusedChannelUrl) {
-            focusItem = visibleItems.find(function(item) {
-                var idx = parseInt(item.getAttribute("data-index"), 10);
+            focusItem = visibleItems.find(function(el) {
+                if (el.classList.contains("channel-filter-entry")) return false;
+                var idx = parseInt(el.getAttribute("data-index"), 10);
                 return channels[idx] && channels[idx].url === tvFocusedChannelUrl;
             }) || null;
         }
         if (!focusItem && visibleItems.length) focusItem = visibleItems[0];
-        visibleItems.forEach(function(item) { item.classList.remove("tv-focused"); });
+        visibleItems.forEach(function(el) { el.classList.remove("tv-focused"); });
         if (focusItem) {
-            var focusPosition = visibleItems.indexOf(focusItem);
-            focusedChannelIndex = focusPosition;
+            focusedChannelIndex = visibleItems.indexOf(focusItem);
             focusItem.classList.add("tv-focused");
             focusItem.focus();
             focusItem.scrollIntoView({block:"nearest"});
-            var focusIndex = parseInt(focusItem.getAttribute("data-index"), 10);
-            tvFocusedChannelUrl = channels[focusIndex] ? channels[focusIndex].url : null;
+            if (focusItem.classList.contains("channel-filter-entry")) tvFocusedChannelUrl = null;
+            else {
+                var focusIndex = parseInt(focusItem.getAttribute("data-index"), 10);
+                tvFocusedChannelUrl = channels[focusIndex] ? channels[focusIndex].url : null;
+            }
         }
     }
-
 }
-
 
 /* ВОСПРОИЗВЕДЕНИЕ */
 
@@ -2129,7 +2091,7 @@ function restoreExcluded() {
 
 
 
-/* Навигация пультом: стрелки, OK/Enter, возврат к списку каналов */
+/* Навигация пультом: избранное закреплено первой строкой списка */
 (function enableRemoteNavigation() {
     function channelItems() {
         return Array.prototype.slice.call(document.querySelectorAll("#channelList .channel"));
@@ -2140,63 +2102,53 @@ function restoreExcluded() {
         focusedChannelIndex = Math.max(0, Math.min(index, items.length - 1));
         items.forEach(function(item) { item.classList.remove("tv-focused"); });
         var target = items[focusedChannelIndex];
-        var targetIndex = parseInt(target.getAttribute("data-index"), 10);
-        tvFocusedChannelUrl = channels[targetIndex] ? channels[targetIndex].url : null;
+        if (!target) return;
+        if (target.classList.contains("channel-filter-entry")) tvFocusedChannelUrl = null;
+        else {
+            var targetIndex = parseInt(target.getAttribute("data-index"), 10);
+            tvFocusedChannelUrl = channels[targetIndex] ? channels[targetIndex].url : null;
+        }
         target.classList.add("tv-focused");
-        target.setAttribute("tabindex", "0");
+        target.tabIndex = 0;
         target.focus();
         target.scrollIntoView({block:"nearest"});
     }
     document.addEventListener("keydown", function(event) {
         if (!document.body.classList.contains("tv-mode")) return;
-        var key = event.key;
-        var code = event.keyCode;
-        var items = channelItems();
-        var active = document.activeElement;
+        var key = event.key, code = event.keyCode;
+        var items = channelItems(), active = document.activeElement;
         var inChannel = active && active.classList && active.classList.contains("channel");
+        var inPinned = inChannel && active.classList.contains("channel-filter-entry");
         var inVideo = active === video;
-        var filterButton = document.getElementById("favoriteFilterButton");
-        var inFilter = active === filterButton;
-        var tvFullscreen = app.classList.contains("tv-video-fullscreen") ||
-            document.fullscreenElement === video || !!video.webkitDisplayingFullscreen;
+        var tvFullscreen = app.classList.contains("tv-video-fullscreen") || document.fullscreenElement === video || !!video.webkitDisplayingFullscreen;
         if (tvFullscreen && (key === "Backspace" || key === "Escape" || code === 4)) {
-            event.preventDefault();
-            exitTvFullscreen();
-            return;
+            event.preventDefault(); exitTvFullscreen(); return;
         }
         if (tvFullscreen && (key === "Enter" || key === " " || code === 23 || code === 66)) {
-            event.preventDefault();
-            exitTvFullscreen();
-            return;
+            event.preventDefault(); exitTvFullscreen(); return;
         }
-        if ((key === "ArrowDown" || code === 20) && inFilter) {
-            event.preventDefault(); focusChannel(0);
-        } else if ((key === "ArrowUp" || code === 19) && inChannel && focusedChannelIndex === 0) {
-            event.preventDefault(); filterButton.focus();
+        if (key === "ArrowUp" || code === 19) {
+            event.preventDefault();
+            focusChannel(0);
+        } else if ((key === "ArrowDown" || code === 20) && inPinned) {
+            event.preventDefault(); focusChannel(1);
         } else if (key === "ArrowDown" || code === 20) {
             event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex + 1 : 0);
-        } else if (key === "ArrowUp" || code === 19) {
-            event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex - 1 : Math.max(0, items.length - 1));
         } else if (key === "ArrowRight" && inVideo) {
-            event.preventDefault(); focusChannel(focusedChannelIndex);
+            event.preventDefault(); focusChannel(Math.max(0, focusedChannelIndex));
         } else if (key === "ArrowLeft" && inChannel) {
             event.preventDefault();
-            if (activeUrl) video.focus();
-            else document.getElementById("favoriteFilterButton").focus();
+            if (!inPinned && activeUrl) video.focus();
         } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inVideo) {
             event.preventDefault(); toggleFullscreen();
-        } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inFilter) {
-            event.preventDefault(); filterButton.click();
         } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inChannel) {
             event.preventDefault(); active.click();
         } else if ((key === "Backspace" || key === "Escape" || code === 4) && inChannel) {
             event.preventDefault();
-            if (video && activeUrl) video.focus();
-            else document.getElementById("favoriteFilterButton").focus();
+            if (!inPinned && video && activeUrl) video.focus();
         }
     }, true);
 })();
-
 /* ЗАПУСК */
 
 fixScreenSize();
