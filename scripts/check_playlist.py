@@ -14,12 +14,8 @@ TIMEOUT = 15
 WORKERS = 16
 REPEAT_CHECKS = 2
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
-EXTRA_CHANNELS = [
-    (
-        ['#EXTINF:-1 tvg-id="Peretz.ru@SD" group-title="Entertainment",Перец'],
-        "https://zabava-htlive.cdn.ngenix.net/hls/CH_PERETZ/variant.m3u8",
-    ),
-]
+EXTRA_CHANNELS = []
+MIN_HD_HEIGHT = 720
 
 def request_bytes(url, limit=8192):
     headers = {
@@ -124,6 +120,18 @@ def parse_entries(data):
                 pending = []
     return entries
 
+def is_hd(entry):
+    """Keep only channels explicitly advertised as 720p or better."""
+    metadata, _ = entry
+    extinf = next((line for line in metadata if line.startswith("#EXTINF:")), "")
+    # Prefer an explicit pixel height when available, so a 576p stream
+    # isn't kept just because its channel name contains "HD".
+    heights = re.findall(r"(?<!\d)(\d{3,4})\s*[pi]\b", extinf, flags=re.I)
+    if heights:
+        return max(map(int, heights)) >= MIN_HD_HEIGHT
+    quality_text = " ".join(metadata)
+    return bool(re.search(r"(?<![\w])(?:720p|1080[pi]?|1440p|2160p|4k|uhd|fhd|full\s*hd)(?![\w])", quality_text, flags=re.I))
+
 def channel_key(entry):
     metadata, _ = entry
     extinf = next((line for line in metadata if line.startswith("#EXTINF:")), "")
@@ -135,13 +143,15 @@ def channel_key(entry):
     return title or extinf.casefold()
 
 def main():
-    entries = parse_entries(fetch_source())
+    source_entries = parse_entries(fetch_source())
+    entries = [entry for entry in source_entries if is_hd(entry)]
+    print(f"High-definition source channels (720p+): {len(entries)} of {len(source_entries)}")
     known_urls = {url.rstrip("/") for _, url in entries}
     for extra in EXTRA_CHANNELS:
         if extra[1].rstrip("/") not in known_urls:
             entries.append(extra)
             known_urls.add(extra[1].rstrip("/"))
-    print(f"Found {len(entries)} source channels, including {len(EXTRA_CHANNELS)} custom channel(s)")
+    print(f"Checking {len(entries)} high-definition channels")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
         results = list(pool.map(check_entry, entries))
