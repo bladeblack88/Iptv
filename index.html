@@ -534,6 +534,30 @@ button:disabled { opacity:.35; }
     background:#0b0b14;
 }
 
+/* Полноэкранный режим без нативного fullscreen видео для старого iOS Safari */
+#app.ios-simulated-fullscreen {
+    position:fixed !important;
+    inset:0 !important;
+    z-index:2147483000 !important;
+    display:flex !important;
+    width:100vw !important;
+    height:100vh !important;
+    min-height:100vh !important;
+    margin:0 !important;
+    overflow:hidden !important;
+    background:#0b0b14 !important;
+}
+#app.ios-simulated-fullscreen #left,
+#app.ios-simulated-fullscreen #right {
+    height:100% !important;
+    min-height:0 !important;
+}
+body.ios-simulated-fullscreen {
+    overflow:hidden !important;
+    width:100% !important;
+    height:100% !important;
+}
+
 </style>
 </head>
 
@@ -689,26 +713,15 @@ video.addEventListener("webkitendfullscreen", function() {
 /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
 
 function toggleFullscreen() {
-    var fullscreenElement =
-        document.fullscreenElement ||
-        document.webkitFullscreenElement;
-
-    if (fullscreenElement) {
-        var exitFullscreen =
-            document.exitFullscreen ||
-            document.webkitExitFullscreen;
-
-        if (exitFullscreen) {
-            var exitResult = exitFullscreen.call(document);
-            if (exitResult && exitResult.catch) {
-                exitResult.catch(function() {});
-            }
-        }
+    // На старом iOS Safari нативный fullscreen видео при выходе часто
+    // ставит HLS-поток на паузу. Используем полноэкранный слой страницы,
+    // не переключая сам элемент video в нативный режим.
+    if (app.classList.contains("ios-simulated-fullscreen")) {
+        app.classList.remove("ios-simulated-fullscreen");
+        document.body.classList.remove("ios-simulated-fullscreen");
         return;
     }
 
-    // Старый Safari на iPad mini 2 не всегда поддерживает fullscreen
-    // для контейнеров. Если API доступен, разворачиваем весь интерфейс.
     var requestAppFullscreen =
         app.requestFullscreen ||
         app.webkitRequestFullscreen;
@@ -718,35 +731,19 @@ function toggleFullscreen() {
             var result = requestAppFullscreen.call(app);
             if (result && result.catch) {
                 result.catch(function() {
-                    document.getElementById("status").textContent =
-                        "Safari не разрешил полноэкранный режим. Попробуйте кнопку ещё раз.";
+                    app.classList.add("ios-simulated-fullscreen");
+                    document.body.classList.add("ios-simulated-fullscreen");
                 });
             }
             return;
         } catch (error) {
-            // Переходим к нативному полноэкранному режиму видео ниже.
+            // Используем полноэкранный слой ниже.
         }
     }
 
-    // Совместимость со старыми версиями iOS Safari:
-    // в них на весь экран можно вывести непосредственно видео.
-    if (video.requestFullscreen) {
-        var videoResult = video.requestFullscreen();
-        if (videoResult && videoResult.catch) {
-            videoResult.catch(function() {
-                if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
-                else document.getElementById("status").textContent =
-                    "Не удалось открыть полноэкранное видео";
-            });
-        }
-    } else if (video.webkitDisplayingFullscreen) {
-        if (video.webkitExitFullscreen) video.webkitExitFullscreen();
-    } else if (video.webkitEnterFullscreen) {
-        video.webkitEnterFullscreen();
-    } else {
-        document.getElementById("status").textContent =
-            "Полноэкранный режим не поддерживается этой версией Safari";
-    }
+    // Совместимый режим для iPad mini 2 и старых версий iOS.
+    app.classList.add("ios-simulated-fullscreen");
+    document.body.classList.add("ios-simulated-fullscreen");
 }
 
 
