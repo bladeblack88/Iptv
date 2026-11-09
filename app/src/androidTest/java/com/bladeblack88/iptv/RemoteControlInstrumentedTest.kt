@@ -133,10 +133,13 @@ class RemoteControlInstrumentedTest {
         val fullscreenDeadline = System.currentTimeMillis() + 15_000
         var fullscreen = false
         while (System.currentTimeMillis() < fullscreenDeadline && !fullscreen) {
-            fullscreen = InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val nativeFullscreen = AtomicReference(false)
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 val parent = webView.parent as? ViewGroup
-                parent != null && parent.childCount > 1
-            } == Unit && evaluate(webView, "!!document.fullscreenElement").trim() == "true"
+                nativeFullscreen.set(parent != null && parent.childCount > 1)
+            }
+            fullscreen = nativeFullscreen.get() ||
+                evaluate(webView, "!!(document.fullscreenElement || (document.getElementById('video') && document.getElementById('video').webkitDisplayingFullscreen))").trim() == "true"
             if (!fullscreen) Thread.sleep(300)
         }
         assertTrue("Second OK did not enter fullscreen", fullscreen)
