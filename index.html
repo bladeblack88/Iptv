@@ -1240,7 +1240,37 @@ function loadEpg() {
             var xml = new DOMParser().parseFromString(xmlText, "application/xml");
             if (xml.querySelector("parsererror")) throw new Error("Некорректный XMLTV");
             var wanted = Object.create(null);
-            channels.forEach(function(channel) { if (channel.epgId) wanted[channel.epgId] = true; });
+            var channelNameToId = Object.create(null);
+            function normalizeEpgName(value) {
+                return String(value || "").toLowerCase()
+                    .replace(/\\b(hd|uhd|4k|sd|1080p|720p|576p|480p)\\b/g, "")
+                    .replace(/[^\\p{L}\\p{N}]+/gu, "");
+            }
+            channels.forEach(function(channel) {
+                if (channel.epgId) wanted[channel.epgId] = true;
+                var key = normalizeEpgName(channel.name);
+                if (key) channelNameToId[key] = channel.epgId || "";
+            });
+            var xmlChannels = xml.getElementsByTagName("channel");
+            for (var c = 0; c < xmlChannels.length; c++) {
+                var xmlChannel = xmlChannels[c];
+                var xmlId = xmlChannel.getAttribute("id");
+                var displayNames = xmlChannel.getElementsByTagName("display-name");
+                for (var dn = 0; dn < displayNames.length; dn++) {
+                    var normalized = normalizeEpgName(displayNames[dn].textContent);
+                    if (normalized && channelNameToId[normalized] === "") {
+                        channelNameToId[normalized] = xmlId;
+                    }
+                }
+            }
+            channels.forEach(function(channel) {
+                if (channel.epgId && wanted[channel.epgId]) return;
+                var matchedId = channelNameToId[normalizeEpgName(channel.name)];
+                if (matchedId) {
+                    channel.epgId = matchedId;
+                    wanted[matchedId] = true;
+                }
+            });
             var programmes = xml.getElementsByTagName("programme");
             var now = Date.now();
             for (var i = 0; i < programmes.length; i++) {
