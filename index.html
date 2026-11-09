@@ -687,7 +687,16 @@ function toggleFullscreen() {
 
     // Совместимость со старыми версиями iOS Safari:
     // в них на весь экран можно вывести непосредственно видео.
-    if (video.webkitDisplayingFullscreen) {
+    if (video.requestFullscreen) {
+        var videoResult = video.requestFullscreen();
+        if (videoResult && videoResult.catch) {
+            videoResult.catch(function() {
+                if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+                else document.getElementById("status").textContent =
+                    "Не удалось открыть полноэкранное видео";
+            });
+        }
+    } else if (video.webkitDisplayingFullscreen) {
         if (video.webkitExitFullscreen) video.webkitExitFullscreen();
     } else if (video.webkitEnterFullscreen) {
         video.webkitEnterFullscreen();
