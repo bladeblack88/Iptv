@@ -644,11 +644,11 @@ var hlsPlayer = null;
 var video = document.getElementById("video");
 var app = document.getElementById("app");
 
-// iOS Safari при закрытии нативного fullscreen иногда оставляет video на паузе.
-// Запоминаем состояние до входа и возобновляем тот же поток после выхода.
+// Восстановление воспроизведения после нативного fullscreen в iOS Safari.
 var resumeAfterVideoFullscreen = false;
 
 video.addEventListener("webkitbeginfullscreen", function() {
+    // Сохраняем намерение воспроизводить ДО того, как Safari сменит состояние video.
     resumeAfterVideoFullscreen = !video.paused && !!activeUrl;
 });
 
@@ -660,18 +660,29 @@ video.addEventListener("webkitendfullscreen", function() {
 
     resumeAfterVideoFullscreen = false;
 
-    // Даём Safari завершить переход обратно во встроенный режим.
-    setTimeout(function() {
-        if (!activeUrl || !video.paused) return;
+    function resumePlayback() {
+        if (!activeUrl) return;
 
-        var playResult = video.play();
-        if (playResult && playResult.catch) {
-            playResult.catch(function() {
-                document.getElementById("status").textContent =
-                    "Нажмите ▶ на видео, чтобы продолжить просмотр";
-            });
+        // Если Safari уже продолжил поток, ничего не меняем.
+        if (!video.paused && !video.ended) return;
+
+        try {
+            var playResult = video.play();
+            if (playResult && playResult.catch) {
+                playResult.catch(function() {
+                    // На старых версиях iOS play() может отклониться во время
+                    // анимации выхода из fullscreen. Повторим после перехода.
+                });
+            }
+        } catch (error) {
+            // Повторная попытка ниже.
         }
-    }, 180);
+    }
+
+    // Сразу после события и ещё раз после завершения анимации Safari.
+    resumePlayback();
+    setTimeout(resumePlayback, 350);
+    setTimeout(resumePlayback, 900);
 });
 
 
