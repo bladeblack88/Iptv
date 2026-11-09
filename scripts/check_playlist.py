@@ -9,6 +9,14 @@ import urllib.parse
 import urllib.request
 
 SOURCE = "https://iptv-org.github.io/iptv/languages/rus.m3u"
+ADDITIONAL_SOURCES = [
+    "http://tv.makeevka.com/playlist.m3u",
+    "http://tv.leveltele.com/tv-http.m3u",
+    "http://video.my-trinity.com/m3u/channel_list.m3u",
+    "http://iptv.phoenix-dnr.ru/unicast-list",
+    "https://f.icm.net.ru/iptv/iptv.m3u",
+    "http://iptv.inlan.net.ru/iptv.m3u",
+]
 OUTPUT = "working.m3u"
 TIMEOUT = 15
 WORKERS = 16
@@ -108,12 +116,15 @@ def check_entry(entry):
     except (urllib.error.URLError, TimeoutError, OSError, ValueError, UnicodeError):
         return (False, float("inf"))
 
-def fetch_source():
-    data, _, _ = request_bytes(SOURCE, 2_000_000)
+def fetch_playlist(url):
+    data, _, _ = request_bytes(url, 2_000_000)
     text = data.decode("utf-8-sig", errors="replace")
     if "#EXTM3U" not in text[:500]:
         raise RuntimeError("Source did not return a valid M3U playlist")
     return text
+
+def fetch_source():
+    return fetch_playlist(SOURCE)
 
 def parse_entries(data):
     entries = []
@@ -158,7 +169,29 @@ def channel_key(entry):
 def main():
     source_entries = parse_entries(fetch_source())
     entries = [entry for entry in source_entries if is_hd(entry)]
-    print(f"High-definition source channels (720p+): {len(entries)} of {len(source_entries)}")
+    print(f"Primary source HD channels (720p+): {len(entries)} of {len(source_entries)}")
+
+    # Supplement the primary Russian-language list with user-provided public M3U
+    # sources. A source is never trusted as playable: every candidate still has
+    # to pass the same two independent stream probes below.
+    for source_url in ADDITIONAL_SOURCES:
+        try:
+            extra_entries = parse_entries(fetch_playlist(source_url))
+            hd_entries = [entry for entry in extra_entries if is_hd(entry)]
+            entries.extend(hd_entries)
+            print(f"Supplemental source: {len(hd_entries)} HD candidates of {len(extra_entries)} entries")
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, UnicodeError) as error:
+            print(f"Supplemental source unavailable/invalid; skipped: {source_url} ({error})")
+
+    # Keep only one candidate per exact URL before probing.
+    unique_entries = []
+    seen_candidate_urls = set()
+    for entry in entries:
+        normalized_url = entry[1].rstrip("/")
+        if normalized_url not in seen_candidate_urls:
+            seen_candidate_urls.add(normalized_url)
+            unique_entries.append(entry)
+    entries = unique_entries
     known_urls = {url.rstrip("/") for _, url in entries}
     for extra in EXTRA_CHANNELS:
         if extra[1].rstrip("/") not in known_urls:
