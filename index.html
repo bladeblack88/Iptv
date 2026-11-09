@@ -1663,7 +1663,7 @@ function checkNextChannel() {
         finish("unverified", "Истекло время ожидания");
     }, 25000);
 
-    var isHlsUrl = /\\.m3u8(?:$|\\?)/i.test(channel.url);
+    var isHlsUrl = /\.m3u8(?:$|\?)/i.test(channel.url);
 
     // На браузерах с поддержкой MSE проверяем HLS через hls.js,
     // а на iOS Safari используем встроенный HLS декодер.
