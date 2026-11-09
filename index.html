@@ -297,8 +297,7 @@ button {
     background:linear-gradient(180deg,#28243e,#1c1a2e); color:#eeeaff;
     font-size:12px; font-weight:700; box-shadow:0 5px 14px rgba(0,0,0,.16);
     text-shadow:none; transition:transform .16s ease, border-color .16s ease, background .16s ease;
-}
-button:hover { border-color:rgba(177,143,255,.65); background:#30284b; }
+}button:hover { border-color:rgba(177,143,255,.65); background:#30284b; }
 button:active { transform:scale(.97); background:#493875; }
 button:disabled { opacity:.35; }
 #checkButton { background:linear-gradient(135deg,#7654df,#5937bd); border-color:#8f72ef; }
@@ -451,6 +450,27 @@ button:disabled { opacity:.35; }
     gap:8px;
     padding:5px 0;
 }
+.icon-controls {
+    width:100%;
+    min-width:0;
+    justify-content:center;
+    box-sizing:border-box;
+}
+.icon-controls .icon-btn {
+    -webkit-appearance:none;
+    appearance:none;
+    line-height:0;
+    text-align:center;
+    vertical-align:middle;
+    overflow:hidden;
+}
+.icon-controls .icon-btn svg {
+    display:block;
+    width:20px;
+    height:20px;
+    margin:auto;
+    flex:none;
+}
 .icon-controls .icon-btn {
     width:42px;
     height:42px;
@@ -498,6 +518,18 @@ button:disabled { opacity:.35; }
 @media (max-width:380px) and (orientation:portrait) {
     .icon-controls { gap:5px; }
     .icon-controls .icon-btn { width:36px; height:36px; flex-basis:36px; border-radius:12px; }
+}
+
+
+/* Полноэкранный контейнер: Safari на iPadOS 16.4+ */
+#app:fullscreen,
+#app:-webkit-full-screen {
+    width:100vw;
+    height:100vh;
+    min-height:100vh;
+    margin:0;
+    overflow:hidden;
+    background:#0b0b14;
 }
 
 </style>
@@ -597,8 +629,7 @@ var showOnlyFavorites = false;
 
 var checking = false;
 var checkIndex = 0;
-var checkTimer = null;
-var checkVideo = null;
+var checkTimer = null;var checkVideo = null;
 
 var checkQueue = [];
 var checkWorking = 0;
@@ -615,24 +646,54 @@ var app = document.getElementById("app");
 /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
 
 function toggleFullscreen() {
-    if (document.fullscreenElement) {
-        if (document.exitFullscreen) document.exitFullscreen().catch(function() {});
+    var fullscreenElement =
+        document.fullscreenElement ||
+        document.webkitFullscreenElement;
+
+    if (fullscreenElement) {
+        var exitFullscreen =
+            document.exitFullscreen ||
+            document.webkitExitFullscreen;
+
+        if (exitFullscreen) {
+            var exitResult = exitFullscreen.call(document);
+            if (exitResult && exitResult.catch) {
+                exitResult.catch(function() {});
+            }
+        }
         return;
     }
 
+    // Старый Safari на iPad mini 2 не всегда поддерживает fullscreen
+    // для контейнеров. Если API доступен, разворачиваем весь интерфейс.
+    var requestAppFullscreen =
+        app.requestFullscreen ||
+        app.webkitRequestFullscreen;
+
+    if (requestAppFullscreen) {
+        try {
+            var result = requestAppFullscreen.call(app);
+            if (result && result.catch) {
+                result.catch(function() {
+                    document.getElementById("status").textContent =
+                        "Safari не разрешил полноэкранный режим. Попробуйте кнопку ещё раз.";
+                });
+            }
+            return;
+        } catch (error) {
+            // Переходим к нативному полноэкранному режиму видео ниже.
+        }
+    }
+
+    // Совместимость со старыми версиями iOS Safari:
+    // в них на весь экран можно вывести непосредственно видео.
     if (video.webkitDisplayingFullscreen) {
         if (video.webkitExitFullscreen) video.webkitExitFullscreen();
-        return;
-    }
-
-    if (video.requestFullscreen) {
-        video.requestFullscreen().catch(function() {
-            document.getElementById("status").textContent = "Не удалось открыть полноэкранный режим";
-        });
     } else if (video.webkitEnterFullscreen) {
         video.webkitEnterFullscreen();
     } else {
-        document.getElementById("status").textContent = "Полноэкранный режим не поддерживается этим браузером";
+        document.getElementById("status").textContent =
+            "Полноэкранный режим не поддерживается этой версией Safari";
     }
 }
 
@@ -898,7 +959,6 @@ function removeExcludedFromPlaylist() {
         activeIndex = -1;
 
         updateNowPlaying();
-
     }
 
 }
@@ -1197,7 +1257,6 @@ function playPrevious() {
     if (!channels.length) {
         return;
     }
-
     var previous = activeIndex - 1;
 
     if (previous < 0) {
@@ -1497,7 +1556,6 @@ function checkNextChannel() {
             promise.catch(function() {
 
                 finish("failed");
-
             });
 
         }
