@@ -4,9 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -32,11 +29,6 @@ class MainActivity : Activity() {
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private val homeUrl = "https://bladeblack88.github.io/Iptv/"
-    private val keyHandler = Handler(Looper.getMainLooper())
-    private var upLongPressTriggered = false
-    private var upLongPressRunnable: Runnable? = null
-    private var upKeyDownAt = 0L
-    private var pendingChannelKey = 0
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -154,82 +146,64 @@ class MainActivity : Activity() {
         """.trimIndent(), null)
     }
 
-    private fun switchChannel(direction: Int) {
-        if (!::webView.isInitialized) return
-        val js = """
-            (function() {
-                if (typeof channels === 'undefined' || !channels.length || typeof playChannel !== 'function') return;
-                var items = typeof channelItems === 'function' ? channelItems() : [];
-                var current = -1;
-                if (typeof activeIndex === 'number' && activeIndex >= 0) {
-                    current = items.findIndex(function(el) {
-                        return !el.classList.contains('channel-filter-entry') &&
-                            parseInt(el.getAttribute('data-index'), 10) === activeIndex;
-                    });
-                }
-                if (current < 0) current = 0;
-                var next = Math.max(0, Math.min(items.length - 1, current + ($direction)));
-                while (next >= 0 && next < items.length && items[next].classList.contains('channel-filter-entry')) {
-                    next += ($direction);
-                }
-                if (next < 0 || next >= items.length) return;
-                var index = parseInt(items[next].getAttribute('data-index'), 10);
-                if (!isNaN(index)) {
-                    if (typeof focusChannel === 'function') focusChannel(next);
-                    playChannel(index);
-                }
-            })();
-        """.trimIndent()
-        webView.evaluateJavascript(js, null)
-    }
-
-    private fun jumpToListTop() {
+    private fun installRemoteControls() {
         if (!::webView.isInitialized) return
         webView.evaluateJavascript("""
             (function() {
-                var list = document.getElementById('channelList');
-                if (list) list.scrollTop = 0;
-                if (typeof focusChannel === 'function') focusChannel(0);
+                if (window.__apkRemoteControlsInstalled) return;
+                window.__apkRemoteControlsInstalled = true;
+                var upTimer = null;
+                var upHeld = false;
+                function items() {
+                    return typeof channelItems === 'function' ? channelItems() : [];
+                }
+                function move(delta) {
+                    var list = items();
+                    if (!list.length || typeof focusChannel !== 'function') return;
+                    var current = list.indexOf(document.activeElement);
+                    if (current < 0 && typeof focusedChannelIndex === 'number') current = focusedChannelIndex;
+                    var next = Math.max(0, Math.min(list.length - 1, current + delta));
+                    focusChannel(next);
+                }
+                document.addEventListener('keydown', function(e) {
+                    var key = e.key || '';
+                    var code = e.keyCode;
+                    if (key === 'ArrowUp' || code === 19) {
+                        e.preventDefault(); e.stopImmediatePropagation();
+                        if (!upTimer) {
+                            upHeld = false;
+                            upTimer = setTimeout(function() {
+                                upHeld = true;
+                                var list = document.getElementById('channelList');
+                                if (list) list.scrollTop = 0;
+                                if (typeof focusChannel === 'function') focusChannel(0);
+                            }, 550);
+                        }
+                        return;
+                    }
+                    if (key === 'ArrowDown' || code === 20) {
+                        e.preventDefault(); e.stopImmediatePropagation();
+                        if (!e.repeat) move(1);
+                        return;
+                    }
+                    if (key === 'Enter' || key === ' ' || code === 23 || code === 66) {
+                        var active = document.activeElement;
+                        if (active && active.classList && active.classList.contains('channel')) {
+                            e.preventDefault(); e.stopImmediatePropagation(); active.click();
+                        }
+                    }
+                }, true);
+                document.addEventListener('keyup', function(e) {
+                    if (e.key === 'ArrowUp' || e.keyCode === 19) {
+                        e.preventDefault(); e.stopImmediatePropagation();
+                        if (upTimer) clearTimeout(upTimer);
+                        upTimer = null;
+                        if (!upHeld) move(-1);
+                        upHeld = false;
+                    }
+                }, true);
             })();
         """.trimIndent(), null)
-    }
-
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            when (event.action) {
-                KeyEvent.ACTION_DOWN -> {
-                    if (event.repeatCount == 0) {
-                        upLongPressTriggered = false
-                        upKeyDownAt = android.os.SystemClock.elapsedRealtime()
-                        upLongPressRunnable?.let { keyHandler.removeCallbacks(it) }
-                        val task = Runnable {
-                            upLongPressTriggered = true
-                            jumpToListTop()
-                        }
-                        upLongPressRunnable = task
-                        keyHandler.postDelayed(task, 550L)
-                    }
-                    return true
-                }
-                KeyEvent.ACTION_UP -> {
-                    upLongPressRunnable?.let { keyHandler.removeCallbacks(it) }
-                    upLongPressRunnable = null
-                    if (!upLongPressTriggered) switchChannel(-1)
-                    return true
-                }
-            }
-        }
-        if (event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                if (event.repeatCount == 0) return true
-                return true
-            }
-            if (event.action == KeyEvent.ACTION_UP) {
-                switchChannel(1)
-                return true
-            }
-        }
-        return super.dispatchKeyEvent(event)
     }
 
     @Deprecated("Deprecated in Android")
