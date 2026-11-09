@@ -686,8 +686,9 @@ body.ios-simulated-fullscreen {
 
 <script>
 
-// Показываем ссылку на APK только в браузерах Android.
-if (/Android/i.test(navigator.userAgent)) {
+// Показываем ссылку только в обычном Android-браузере, но не внутри нашего APK.
+var isRunningInApk = !!(window.AndroidApp && typeof window.AndroidApp.isNativeApp === "function" && window.AndroidApp.isNativeApp());
+if (/Android/i.test(navigator.userAgent) && !isRunningInApk) {
     var androidDownload = document.getElementById("androidDownload");
     if (androidDownload) androidDownload.style.display = "inline-flex";
 }
