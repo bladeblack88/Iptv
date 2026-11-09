@@ -42,5 +42,6 @@ jobs:
             echo "The shared playlist has not changed."
           else
             git commit -m "Refresh shared working IPTV playlist"
+            git pull --rebase origin main
             git push
           fi
