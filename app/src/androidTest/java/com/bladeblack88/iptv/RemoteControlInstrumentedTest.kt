@@ -112,7 +112,9 @@ class RemoteControlInstrumentedTest {
     }
 
     private fun press(keyCode: Int) {
-        instrumentation.runOnMainSync { webView?.requestFocus() }
+        // Keep the DOM channel focused between consecutive OK presses.
+        // Re-requesting native WebView focus here steals focus from the DOM
+        // after the first press and makes the second OK miss the fullscreen path.
         instrumentation.sendKeyDownUpSync(keyCode)
     }
 
