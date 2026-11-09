@@ -1255,9 +1255,11 @@ function loadEpg() {
             });
             var xmlChannels = xml.getElementsByTagName("channel");
             for (var c = 0; c < xmlChannels.length; c++) {
+                xmlChannelIds[xmlChannels[c].getAttribute("id")] = true;
+            }
+            for (var c = 0; c < xmlChannels.length; c++) {
                 var xmlChannel = xmlChannels[c];
                 var xmlId = xmlChannel.getAttribute("id");
-                xmlChannelIds[xmlId] = true;
                 var displayNames = xmlChannel.getElementsByTagName("display-name");
                 for (var dn = 0; dn < displayNames.length; dn++) {
                     var normalized = normalizeEpgName(displayNames[dn].textContent);
