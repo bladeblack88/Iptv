@@ -1505,10 +1505,26 @@ function playChannel(index) {
         currentHls.on(Hls.Events.ERROR, function(event, data) {
             if (!data.fatal || hlsPlayer !== currentHls) return;
             var detail = data.details || data.type || "ошибка потока";
-            document.getElementById("status").textContent =
-                "Ошибка HLS (" + detail + "). Возможно, сервер недоступен или ограничивает доступ.";
             currentHls.destroy();
             hlsPlayer = null;
+
+            // Некоторые телевизоры лучше декодируют тот же HLS нативным плеером.
+            if (nativeHls) {
+                document.getElementById("status").textContent =
+                    "Переключаем канал на встроенный видеоплеер…";
+                video.src = channel.url;
+                video.load();
+                var fallbackPlay = video.play();
+                if (fallbackPlay && fallbackPlay.catch) {
+                    fallbackPlay.catch(function() {
+                        document.getElementById("status").textContent =
+                            "Не удалось запустить канал (HLS: " + detail + "). Возможно, источник недоступен.";
+                    });
+                }
+            } else {
+                document.getElementById("status").textContent =
+                    "Не удалось запустить HLS (" + detail + "). Возможно, источник недоступен, ограничивает доступ или требует другой кодек.";
+            }
         });
     } else if (nativeHls) {
         video.src = channel.url;
