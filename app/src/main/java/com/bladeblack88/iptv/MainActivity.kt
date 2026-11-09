@@ -89,12 +89,7 @@ class MainActivity : Activity() {
             }
 
             override fun onHideCustomView() {
-                val view = customView ?: return
-                rootLayout.removeView(view)
-                customView = null
-                customViewCallback?.onCustomViewHidden()
-                customViewCallback = null
-                webView.requestFocus()
+                hideCustomView()
             }
         }
         // Keep navigation inside WebView so embedded players and stream pages load in-app.
@@ -117,9 +112,18 @@ class MainActivity : Activity() {
     }
 
     @Deprecated("Deprecated in Android")
+    private fun hideCustomView() {
+        val view = customView ?: return
+        rootLayout.removeView(view)
+        customView = null
+        customViewCallback?.onCustomViewHidden()
+        customViewCallback = null
+        webView.requestFocus()
+    }
+
     override fun onBackPressed() {
         if (customView != null) {
-            (webView.webChromeClient as? WebChromeClient)?.onHideCustomView()
+            hideCustomView()
             return
         }
         if (::webView.isInitialized && webView.canGoBack()) {
