@@ -58,7 +58,7 @@ class MainActivity : Activity() {
         status.text = "Получаем список каналов Matrix…"
         thread {
             try {
-                val conn = (URL("$api?action=get_all_channels").openConnection() as HttpURLConnection).apply {
+                val conn = (URL("$api?type=itv&action=get_all_channels&JsHttpRequest=1-xml").openConnection() as HttpURLConnection).apply {
                     connectTimeout=12000; readTimeout=20000; requestMethod="GET"
                     setRequestProperty("Accept","application/json")
                     setRequestProperty("User-Agent","MatrixPlayer/1.0 (Android TV)")
@@ -80,25 +80,48 @@ class MainActivity : Activity() {
     }
 
     private fun parseChannels(body:String): List<TvChannel> {
-        val out= mutableListOf<TvChannel>()
-        fun add(o:JSONObject) {
-            val title=o.optString("title",o.optString("name",o.optString("channel_name","")))
-            val stream=o.optString("streamUrl",o.optString("stream_url",o.optString("url","")))
-            val group=o.optString("genre_name",o.optString("category","Все"))
-            if(title.isNotBlank() && stream.startsWith("http")) out.add(TvChannel(title,stream,group))
+        val out = mutableListOf<TvChannel>()
+        val seen = mutableSetOf<String>()
+        fun field(o: JSONObject, vararg keys: String): String {
+            for (key in keys) {
+                val v=o.opt(key)
+                if (v is String && v.isNotBlank() && v!="null") return v
+                if (v is Number) return v.toString()
+            }
+            return ""
         }
-        val trimmed=body.trim()
-        if(trimmed.startsWith("[")) {
-            val a=JSONArray(trimmed); for(i in 0 until a.length()) if(a.optJSONObject(i)!=null) add(a.getJSONObject(i))
-        } else {
-            val obj=JSONObject(trimmed)
-            val keys=listOf("channels","data","results","items")
-            var arr:JSONArray?=null
-            for(k in keys) if(obj.optJSONArray(k)!=null) { arr=obj.getJSONArray(k); break }
-            if(arr!=null) for(i in 0 until arr.length()) if(arr.optJSONObject(i)!=null) add(arr.getJSONObject(i))
-            else if(obj.has("title") || obj.has("name")) add(obj)
+        fun add(o: JSONObject) {
+            val title=field(o,"title","name","channel_name","tv_name","channelTitle")
+            var stream=field(o,"streamUrl","stream_url","url","cmd","direct_source")
+            val p=stream.indexOf("http")
+            if(p>0) stream=stream.substring(p).substringBefore(" ")
+            val group=field(o,"genre_name","category","group","category_name").ifBlank { "Все" }
+            if(title.isNotBlank() && stream.startsWith("http") && seen.add(stream)) out.add(TvChannel(title,stream,group))
         }
-        return out.distinctBy { it.url }
+        fun walk(value:Any?) {
+            when(value) {
+                is JSONObject -> {
+                    add(value)
+                    val keys=value.keys()
+                    while(keys.hasNext()) {
+                        val child=value.opt(keys.next())
+                        if(child is JSONObject || child is JSONArray) walk(child)
+                    }
+                }
+                is JSONArray -> for(i in 0 until value.length()) walk(value.opt(i))
+            }
+        }
+        val raw=body.trim().removePrefix("\uFEFF")
+        when {
+            raw.startsWith("[") -> walk(JSONArray(raw))
+            raw.startsWith("{") -> walk(JSONObject(raw))
+            else -> {
+                val first=raw.indexOf("{")
+                val last=raw.lastIndexOf("}")
+                if(first>=0 && last>first) walk(JSONObject(raw.substring(first,last+1)))
+            }
+        }
+        return out
     }
 
     private fun renderChannels() {
