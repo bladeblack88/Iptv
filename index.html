@@ -1129,9 +1129,11 @@ function parseM3U(data) {
 
     var lines = data.split(/\r?\n/);
     var result = [];
+    var seenUrls = Object.create(null);
 
     var currentName = "";
     var currentGroup = "Другие";
+    var currentLogo = "";
 
     for (var i = 0; i < lines.length; i++) {
 
@@ -1154,7 +1156,7 @@ function parseM3U(data) {
                 : "Другие";
 
             var logoMatch = line.match(/tvg-logo="([^"]*)"/i);
-            var currentLogo = logoMatch && logoMatch[1] ? logoMatch[1] : "";
+            currentLogo = logoMatch && logoMatch[1] ? logoMatch[1] : "";
 
         }
 
@@ -1164,19 +1166,16 @@ function parseM3U(data) {
             line.indexOf("://") !== -1
         ) {
 
-            result.push({
-
-                name: currentName || "Без названия",
-
-                group: currentGroup,
-
-                logo: currentLogo,
-
-                url: line,
-
-                checkStatus: "unverified"
-
-            });
+            if (!seenUrls[line]) {
+                seenUrls[line] = true;
+                result.push({
+                    name: currentName || "Без названия",
+                    group: currentGroup,
+                    logo: currentLogo,
+                    url: line,
+                    checkStatus: "unverified"
+                });
+            }
 
             currentName = "";
             currentGroup = "Другие";
@@ -1361,17 +1360,12 @@ function renderChannels() {
 
         item.onclick = function(event) {
             var channelItem = this;
-            if (document.body.classList.contains("tv-mode")) {
-                var selectedIndex = parseInt(channelItem.getAttribute("data-index"), 10);
-                // Выбор канала только запускает его в левом окне.
-                // Полный экран включается отдельным нажатием на само видео.
-                if (selectedIndex !== activeIndex || !activeUrl) playChannel(selectedIndex);
-                return;
-            }
             var index = parseInt(channelItem.getAttribute("data-index"), 10);
             var now = Date.now();
 
-            if (channelItem._tapTimer && now - channelItem._lastTap < 420) {
+            // Одно нажатие запускает канал; быстрое повторное нажатие
+            // добавляет/удаляет его из избранного, включая пульт Google TV.
+            if (channelItem._tapTimer && now - channelItem._lastTap < 500) {
                 clearTimeout(channelItem._tapTimer);
                 channelItem._tapTimer = null;
                 channelItem._lastTap = 0;
@@ -1382,8 +1376,8 @@ function renderChannels() {
             channelItem._lastTap = now;
             channelItem._tapTimer = setTimeout(function() {
                 channelItem._tapTimer = null;
-                playChannel(index);
-            }, 450);
+                if (index !== activeIndex || !activeUrl) playChannel(index);
+            }, 360);
         };
 
         list.appendChild(item);
@@ -1409,6 +1403,9 @@ function renderChannels() {
     if (document.body.classList.contains("tv-mode") && activeIndex >= 0) {
         var activeItem = list.querySelector('[data-index="' + activeIndex + '"]');
         if (activeItem) {
+            var visibleItems = Array.prototype.slice.call(list.querySelectorAll(".channel"));
+            var activePosition = visibleItems.indexOf(activeItem);
+            if (activePosition >= 0) focusedChannelIndex = activePosition;
             activeItem.classList.add("tv-focused");
             activeItem.scrollIntoView({block:"nearest"});
             if (hadChannelFocus || document.activeElement === document.body) activeItem.focus();
@@ -1431,7 +1428,7 @@ function playChannel(index) {
 
     // Для UNIVER TV используем официальный веб-плеер КФУ внутри IPTV.
     // Прямой HLS-адрес канала пока не подтверждён.
-    var isUniverTV = /univer\\s*tv/i.test(channel.name) || /universmotri|strm\\.yandex/i.test(channel.url);
+    var isUniverTV = /univer\s*tv/i.test(channel.name) || /universmotri|strm\.yandex/i.test(channel.url);
     if (isUniverTV) {
         video.pause();
         if (hlsPlayer) {
@@ -1462,8 +1459,9 @@ function playChannel(index) {
     video.removeAttribute("src");
     video.load();
 
-    var isHls = /\\.m3u8(?:$|\\?)/i.test(channel.url);
+    var isHls = /\.m3u8(?:$|\?)/i.test(channel.url);
 
+    var nativeHls = isHls && video.canPlayType("application/vnd.apple.mpegurl");
     if (isHls && window.Hls && Hls.isSupported()) {
         hlsPlayer = new Hls({
             enableWorker: true,
@@ -1512,6 +1510,16 @@ function playChannel(index) {
             currentHls.destroy();
             hlsPlayer = null;
         });
+    } else if (nativeHls) {
+        video.src = channel.url;
+        video.load();
+        var nativeResult = video.play();
+        if (nativeResult && nativeResult.catch) {
+            nativeResult.catch(function() {
+                document.getElementById("status").textContent =
+                    "Не удалось запустить поток. Проверьте доступность канала или нажмите ▶.";
+            });
+        }
     } else {
         video.src = channel.url;
         video.load();
