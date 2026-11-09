@@ -227,19 +227,40 @@ class MainActivity : Activity() {
                     var all = items();
                     if (all.length) focusAt(Math.max(0, currentPosition(all)) + delta);
                 }
+                var lastOkChannelUrl = null;
+                function isTvFullscreen() {
+                    var video = document.getElementById('video');
+                    var app = document.getElementById('app');
+                    return !!(document.fullscreenElement ||
+                        (video && video.webkitDisplayingFullscreen) ||
+                        (app && app.classList.contains('tv-video-fullscreen')) ||
+                        document.body.classList.contains('tv-video-fullscreen'));
+                }
                 function activate() {
                     var all = items(), pos = currentPosition(all), target = all[pos];
                     if (!target) return;
                     if (target.classList.contains('channel-filter-entry')) {
-                        // Activate the pinned "Избранное / Все каналы" row
-                        // using the same click path as a real remote OK press.
                         target.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
+                        lastOkChannelUrl = null;
                         return;
                     }
                     var n = parseInt(target.getAttribute('data-index'), 10);
-                    if (!isNaN(n) && typeof playChannel === 'function') {
-                        window.tvFocusedChannelUrl = channels[n] ? channels[n].url : null;
-                        playChannel(n); save();
+                    if (isNaN(n) || !channels[n]) return;
+                    var url = channels[n].url;
+                    window.tvFocusedChannelUrl = url;
+                    // First OK selects/starts the channel in the page player.
+                    // A second OK on that same selected channel opens native TV fullscreen.
+                    if (lastOkChannelUrl === url && typeof activeIndex === 'number' &&
+                        activeIndex === n && typeof enterTvFullscreen === 'function') {
+                        enterTvFullscreen();
+                        lastOkChannelUrl = null;
+                        save();
+                        return;
+                    }
+                    if (typeof playChannel === 'function') {
+                        playChannel(n);
+                        lastOkChannelUrl = url;
+                        save();
                     }
                 }
                 function toggleFavorite() {
@@ -263,6 +284,9 @@ class MainActivity : Activity() {
                 }
                 window.addEventListener('keydown', function(e) {
                     var key = e.key || '', code = e.keyCode;
+                    // In fullscreen, leave OK/Back handling to the site's fullscreen
+                    // exit logic and do not move the hidden channel-list focus.
+                    if (isTvFullscreen()) return;
                     if (key === 'ArrowUp' || code === 19) {
                         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
                         if (!e.repeat) move(-1);
