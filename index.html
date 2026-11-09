@@ -93,6 +93,28 @@ body {
 .welcome-tips{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;border:1px solid #3c69a477;border-radius:14px;padding:10px;background:#061634cc;box-shadow:0 8px 28px #0004}
 .welcome-tips div{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;padding:5px;border-right:1px solid #4a6d9c66}.welcome-tips div:last-child{border:0}.welcome-tips b{display:grid;place-items:center;min-width:31px;height:31px;padding:3px;border:1px solid #4ebeff;border-radius:50%;color:#e5f8ff;font-size:clamp(10px,1.3vw,14px);box-shadow:0 0 12px #168bff55}.welcome-tip-copy{display:flex;flex-direction:column;gap:3px}.welcome-tips strong{font-size:clamp(9px,1.15vw,13px);color:white}.welcome-tips small{font-size:clamp(8px,.9vw,10px);color:#9fbce4}.welcome-foot{position:relative;text-align:center;margin-top:8px;color:#8fb9ed;font-size:clamp(8px,1vw,11px)}
 .player-welcome.error-state{background:radial-gradient(ellipse at 28% 48%,#21165b 0%,#10132f 48%,#050918 100%);border-color:#5949a5}.player-welcome.error-state .welcome-glow{background:radial-gradient(ellipse at 15% 85%,#5734ff55,transparent 42%),radial-gradient(ellipse at 92% 12%,#167bff22,transparent 45%)}.player-welcome.error-state .welcome-tv{border-color:#879bff;box-shadow:0 0 20px #7777ff,0 0 45px #5734ff66}.player-welcome.error-state .welcome-play{color:#9caeff;text-shadow:0 0 18px #746bff}.player-welcome.error-state .welcome-kicker{color:#b4a6ff}
+/* Мягкая анимация заставки в стиле самого плеера */
+.player-welcome { animation: welcomeFadeIn .55s ease both; }
+.player-welcome .welcome-glow { animation: welcomeGlow 7s ease-in-out infinite alternate; }
+.welcome-tv { animation: tvFloat 4.5s ease-in-out infinite; }
+.welcome-play { animation: playPulse 2.4s ease-in-out infinite; }
+.welcome-tips { animation: tipsRise .7s .12s ease both; }
+.welcome-clock { animation: liveBlink 2s ease-in-out infinite; }
+.player-welcome.error-state .welcome-tv { animation: errorFloat 3.2s ease-in-out infinite; }
+@keyframes welcomeFadeIn { from { opacity:0; transform:scale(.985); } to { opacity:1; transform:scale(1); } }
+@keyframes welcomeGlow { from { opacity:.62; transform:scale(1); } to { opacity:1; transform:scale(1.035); } }
+@keyframes tvFloat { 0%,100% { translate:0 0; } 50% { translate:0 -7px; } }
+@keyframes errorFloat { 0%,100% { translate:0 0; } 50% { translate:0 -4px; } }
+@keyframes playPulse { 0%,100% { transform:scale(.96); filter:brightness(.9); } 50% { transform:scale(1.08); filter:brightness(1.3); } }
+@keyframes tipsRise { from { opacity:0; translate:0 9px; } to { opacity:1; translate:0 0; } }
+@keyframes liveBlink { 0%,100% { opacity:.65; } 50% { opacity:1; } }
+@media (prefers-reduced-motion: reduce) {
+ .player-welcome, .player-welcome *, .player-welcome .welcome-glow { animation:none !important; transition:none !important; }
+}
+@media screen and (orientation: landscape) {
+ .player-welcome { left:0; right:0; top:0; bottom:0; border-radius:0; }
+}
+
 @media(max-height:520px){.player-welcome{top:78px;bottom:92px;padding:10px}.welcome-tv{width:22%;border-radius:13px}.welcome-main{gap:15px}.player-welcome h2{font-size:clamp(17px,3vh,24px)}.welcome-tips{padding:5px}.welcome-tips div{padding:2px}.welcome-foot{display:none}}
 @media(max-width:600px){.welcome-main{gap:10px}.welcome-tv{width:25%}.welcome-tips{gap:2px;padding:5px}.welcome-tips div{gap:4px}.welcome-tips small{display:none}}
 /* Стандартные кнопки управления видео включены */
@@ -816,6 +838,7 @@ video.addEventListener("playing", function() {
     if (activeUrl) document.getElementById("status").textContent = "▶ Воспроизведение началось";
 });
 var playerWelcome = document.getElementById("playerWelcome");
+var playerWelcomeTimer = null;
 function showPlayerWelcome(message, isError) {
   if (!playerWelcome) return;
   var subtitle = document.getElementById("welcomeSubtitle");
@@ -827,7 +850,10 @@ function showPlayerWelcome(message, isError) {
   playerWelcome.classList.toggle("error-state", !!isError);
   playerWelcome.hidden = false;
 }
-function hidePlayerWelcome() { if (playerWelcome) playerWelcome.hidden = true; }
+function hidePlayerWelcome() {
+  if (playerWelcome) playerWelcome.hidden = true;
+  if (playerWelcomeTimer) { clearTimeout(playerWelcomeTimer); playerWelcomeTimer = null; }
+}
 showPlayerWelcome();
 video.addEventListener("playing", hidePlayerWelcome);
 video.addEventListener("canplay", hidePlayerWelcome);
@@ -1572,6 +1598,14 @@ function playChannel(index) {
     var status = document.getElementById("status");
     status.textContent = "Подключаем канал: " + channel.name;
     showPlayerWelcome("Подключаем «" + channel.name + "»…");
+    if (playerWelcomeTimer) clearTimeout(playerWelcomeTimer);
+    var requestedUrl = activeUrl;
+    playerWelcomeTimer = setTimeout(function() {
+        if (activeUrl === requestedUrl && video.paused && !video.error) {
+            document.getElementById("status").textContent = "Канал долго не отвечает. Попробуйте другой канал или повторите запуск.";
+            showPlayerWelcome("Поток не ответил вовремя. Выберите другой канал или нажмите OK ещё раз.", true);
+        }
+    }, 22000);
 
     var isUniverTV = /univer\s*tv/i.test(channel.name) || /universmotri|strm\.yandex/i.test(channel.url);
     if (isUniverTV) {
@@ -1706,6 +1740,7 @@ function stopPlayer() {
     video.load();
 
     activeUrl = null;
+    if (playerWelcomeTimer) { clearTimeout(playerWelcomeTimer); playerWelcomeTimer = null; }
     showPlayerWelcome();
 
 }
