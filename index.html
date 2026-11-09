@@ -441,7 +441,26 @@ button:disabled { opacity:.35; }
         box-sizing: border-box;
         background: #241534;
     }
-    .library-head, #bottomInfo { display: none !important; }
+    .library-head {
+        display:flex !important;
+        flex:0 0 auto;
+        min-height:48px;
+        padding:7px 10px;
+        align-items:center;
+        justify-content:space-between;
+        gap:6px;
+        background:#121321;
+        border-bottom:1px solid rgba(177,143,255,.16);
+    }
+    .library-title { font-size:12px; }
+    .library-subtitle { display:none; }
+    #favoriteFilterButton {
+        display:block !important;
+        padding:7px 10px;
+        font-size:10px;
+        white-space:nowrap;
+    }
+    #bottomInfo { display:none !important; }
     #channelList {
         display: block;
         flex: 1 1 auto;
