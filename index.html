@@ -674,6 +674,28 @@ var hlsPlayer = null;
 var video = document.getElementById("video");
 var app = document.getElementById("app");
 
+// Отображаем состояние реального воспроизведения, а не только факт выбора канала.
+video.addEventListener("playing", function() {
+    if (activeUrl) document.getElementById("status").textContent = "▶ Воспроизведение началось";
+});
+video.addEventListener("waiting", function() {
+    if (activeUrl) document.getElementById("status").textContent = "Буферизация потока…";
+});
+video.addEventListener("stalled", function() {
+    if (activeUrl) document.getElementById("status").textContent = "Поток задерживается: ожидание данных от сервера…";
+});
+video.addEventListener("error", function() {
+    if (!activeUrl || !video.error) return;
+    var messages = {
+        1: "Загрузка потока отменена",
+        2: "Ошибка сети: сервер не передаёт видеоданные",
+        3: "Ошибка декодирования: формат потока не удалось прочитать",
+        4: "Формат или адрес потока не поддерживается браузером"
+    };
+    document.getElementById("status").textContent =
+        messages[video.error.code] || "Не удалось открыть видеопоток";
+});
+
 // Восстановление воспроизведения после нативного fullscreen в iOS Safari.
 var resumeAfterVideoFullscreen = false;
 
@@ -1204,18 +1226,14 @@ function renderChannels() {
 
 function playChannel(index) {
 
-    if (index < 0 || index >= channels.length) {
-        return;
-    }
+    if (index < 0 || index >= channels.length) return;
 
     activeIndex = index;
-
     var channel = channels[index];
-
     activeUrl = channel.url;
+    document.getElementById("status").textContent = "Загрузка канала: " + channel.name;
 
     video.pause();
-
     if (hlsPlayer) {
         hlsPlayer.destroy();
         hlsPlayer = null;
@@ -1224,7 +1242,7 @@ function playChannel(index) {
     video.removeAttribute("src");
     video.load();
 
-    var isHls = /\.m3u8(?:$|\?)/i.test(channel.url);
+    var isHls = /\\.m3u8(?:$|\\?)/i.test(channel.url);
 
     if (isHls && window.Hls && Hls.isSupported()) {
         hlsPlayer = new Hls({
@@ -1233,23 +1251,30 @@ function playChannel(index) {
             backBufferLength: 30
         });
 
-        hlsPlayer.loadSource(channel.url);
-        hlsPlayer.attachMedia(video);
+        var currentHls = hlsPlayer;
+        currentHls.loadSource(channel.url);
+        currentHls.attachMedia(video);
 
-        hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
-            video.play().catch(function() {
-                document.getElementById("status").textContent =
-                    "Нажмите ▶ на плеере, чтобы начать просмотр";
-            });
+        currentHls.on(Hls.Events.MANIFEST_PARSED, function() {
+            if (hlsPlayer !== currentHls) return;
+            var result = video.play();
+            if (result && result.catch) {
+                result.catch(function() {
+                    if (hlsPlayer === currentHls) {
+                        document.getElementById("status").textContent =
+                            "Нажмите ▶ на плеере, чтобы начать просмотр";
+                    }
+                });
+            }
         });
 
-        hlsPlayer.on(Hls.Events.ERROR, function(event, data) {
-            if (data.fatal) {
-                document.getElementById("status").textContent =
-                    "Не удалось воспроизвести канал: поток недоступен или заблокирован";
-                hlsPlayer.destroy();
-                hlsPlayer = null;
-            }
+        currentHls.on(Hls.Events.ERROR, function(event, data) {
+            if (!data.fatal || hlsPlayer !== currentHls) return;
+            var detail = data.details || data.type || "ошибка потока";
+            document.getElementById("status").textContent =
+                "Ошибка HLS (" + detail + "). Возможно, сервер недоступен или ограничивает доступ.";
+            currentHls.destroy();
+            hlsPlayer = null;
         });
     } else {
         video.src = channel.url;
@@ -1259,20 +1284,14 @@ function playChannel(index) {
         if (result && result.catch) {
             result.catch(function() {
                 document.getElementById("status").textContent =
-                    "Этот поток не поддерживается браузером или требует запуска кнопкой ▶";
+                    "Автозапуск не разрешён или поток недоступен. Нажмите ▶ на плеере.";
             });
         }
     }
 
     updateNowPlaying();
-
     renderChannels();
-
-    document.getElementById("status").textContent =
-        "▶ Канал воспроизводится";
-
 }
-
 
 function stopPlayer() {
 
