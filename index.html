@@ -848,8 +848,7 @@ var videoTapTimer = null;
 var videoLastTap = 0;
 
 video.addEventListener("click", function(event) {
-    if (document.body.classList.contains("tv-mode") &&
-        app.classList.contains("tv-video-fullscreen")) {
+    if (document.body.classList.contains("tv-mode")) {
         toggleFullscreen();
         if (event && event.preventDefault) event.preventDefault();
         return;
@@ -873,12 +872,35 @@ video.addEventListener("click", function(event) {
 
 function enterTvFullscreen() {
     if (!document.body.classList.contains("tv-mode")) return;
+    // Android WebView должен показать видео через нативный fullscreen
+    // custom view, иначе аппаратный video surface может стать чёрным.
+    try {
+        if (video.requestFullscreen) {
+            var request = video.requestFullscreen();
+            if (request && request.catch) request.catch(function() {
+                app.classList.add("tv-video-fullscreen");
+                document.body.classList.add("tv-video-fullscreen");
+            });
+            return;
+        }
+        if (video.webkitEnterFullscreen) {
+            video.webkitEnterFullscreen();
+            return;
+        }
+    } catch (e) {}
     app.classList.add("tv-video-fullscreen");
     document.body.classList.add("tv-video-fullscreen");
     try { video.focus(); } catch (e) {}
 }
 
 function exitTvFullscreen() {
+    try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
+            video.webkitExitFullscreen();
+        }
+    } catch (e) {}
     app.classList.remove("tv-video-fullscreen");
     document.body.classList.remove("tv-video-fullscreen");
     if (activeIndex >= 0) {
@@ -887,9 +909,19 @@ function exitTvFullscreen() {
     }
 }
 
+document.addEventListener("fullscreenchange", function() {
+    if (!document.fullscreenElement) {
+        app.classList.remove("tv-video-fullscreen");
+        document.body.classList.remove("tv-video-fullscreen");
+    }
+});
+
 function toggleFullscreen() {
     if (document.body.classList.contains("tv-mode")) {
-        if (app.classList.contains("tv-video-fullscreen")) exitTvFullscreen();
+        var isFullscreen = !!document.fullscreenElement ||
+            !!video.webkitDisplayingFullscreen ||
+            app.classList.contains("tv-video-fullscreen");
+        if (isFullscreen) exitTvFullscreen();
         else enterTvFullscreen();
         return;
     }
@@ -1330,12 +1362,9 @@ function renderChannels() {
             var channelItem = this;
             if (document.body.classList.contains("tv-mode")) {
                 var selectedIndex = parseInt(channelItem.getAttribute("data-index"), 10);
-                if (selectedIndex === activeIndex && activeUrl) {
-                    toggleFullscreen();
-                } else {
-                    playChannel(selectedIndex);
-                    enterTvFullscreen();
-                }
+                // Выбор канала только запускает его в левом окне.
+                // Полный экран включается отдельным нажатием на само видео.
+                if (selectedIndex !== activeIndex || !activeUrl) playChannel(selectedIndex);
                 return;
             }
             var index = parseInt(channelItem.getAttribute("data-index"), 10);
@@ -2093,7 +2122,8 @@ function restoreExcluded() {
         var items = channelItems();
         var active = document.activeElement;
         var inChannel = active && active.classList && active.classList.contains("channel");
-        var tvFullscreen = app.classList.contains("tv-video-fullscreen");
+        var tvFullscreen = app.classList.contains("tv-video-fullscreen") ||
+            document.fullscreenElement === video || !!video.webkitDisplayingFullscreen;
         if (tvFullscreen && (key === "Backspace" || key === "Escape" || code === 4)) {
             event.preventDefault();
             exitTvFullscreen();
