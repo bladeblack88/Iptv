@@ -67,6 +67,7 @@ class MainActivity : Activity() {
                     callback.onCustomViewHidden()
                     return
                 }
+                savePlayerPosition()
                 customView = view
                 customViewCallback = callback
                 view.setBackgroundColor(android.graphics.Color.BLACK)
@@ -95,6 +96,11 @@ class MainActivity : Activity() {
         // Keep navigation inside WebView so embedded players and stream pages load in-app.
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                installRemoteControls()
+                restorePlayerPosition()
+            }
         }
 
         rootLayout.addView(webView)
@@ -116,10 +122,14 @@ class MainActivity : Activity() {
         webView.evaluateJavascript("""
             (function() {
                 var list = document.getElementById('channelList');
-                window.__apkSavedListTop = list ? list.scrollTop : 0;
-                window.__apkSavedFocusIndex = typeof focusedChannelIndex === 'number' ? focusedChannelIndex : 0;
-                window.__apkSavedFocusUrl = typeof tvFocusedChannelUrl === 'string' ? tvFocusedChannelUrl : null;
-                window.__apkSavedActiveIndex = typeof activeIndex === 'number' ? activeIndex : -1;
+                var state = {
+                    top: list ? list.scrollTop : 0,
+                    focusIndex: typeof focusedChannelIndex === 'number' ? focusedChannelIndex : 0,
+                    focusUrl: typeof tvFocusedChannelUrl === 'string' ? tvFocusedChannelUrl : null,
+                    activeIndex: typeof activeIndex === 'number' ? activeIndex : -1
+                };
+                window.__apkSavedPlayerPosition = state;
+                try { localStorage.setItem('__apkPlayerPosition', JSON.stringify(state)); } catch (e) {}
             })();
         """.trimIndent(), null)
     }
@@ -128,20 +138,24 @@ class MainActivity : Activity() {
         if (!::webView.isInitialized) return
         webView.evaluateJavascript("""
             (function() {
+                var state = window.__apkSavedPlayerPosition;
+                try { state = state || JSON.parse(localStorage.getItem('__apkPlayerPosition') || 'null'); } catch (e) {}
+                if (!state) return;
                 var list = document.getElementById('channelList');
-                if (list && typeof window.__apkSavedListTop === 'number') list.scrollTop = window.__apkSavedListTop;
-                if (typeof window.__apkSavedFocusUrl === 'string' && window.__apkSavedFocusUrl) {
-                    tvFocusedChannelUrl = window.__apkSavedFocusUrl;
-                    var items = channelItems();
+                if (list) list.scrollTop = Number(state.top) || 0;
+                if (state.focusUrl && typeof channels !== 'undefined') {
+                    tvFocusedChannelUrl = state.focusUrl;
+                    var items = typeof channelItems === 'function' ? channelItems() : [];
                     var match = items.findIndex(function(el) {
                         if (el.classList.contains('channel-filter-entry')) return false;
                         var i = parseInt(el.getAttribute('data-index'), 10);
-                        return channels[i] && channels[i].url === window.__apkSavedFocusUrl;
+                        return channels[i] && channels[i].url === state.focusUrl;
                     });
-                    if (match >= 0) focusChannel(match);
-                } else if (typeof window.__apkSavedFocusIndex === 'number') {
-                    focusChannel(window.__apkSavedFocusIndex);
+                    if (match >= 0 && typeof focusChannel === 'function') focusChannel(match);
+                } else if (typeof state.focusIndex === 'number' && typeof focusChannel === 'function') {
+                    focusChannel(state.focusIndex);
                 }
+                window.__apkSavedPlayerPosition = state;
             })();
         """.trimIndent(), null)
     }
@@ -154,16 +168,34 @@ class MainActivity : Activity() {
                 window.__apkRemoteControlsInstalled = true;
                 var upTimer = null;
                 var upHeld = false;
-                function items() {
+                var lastKeyAt = 0;
+                function getItems() {
                     return typeof channelItems === 'function' ? channelItems() : [];
                 }
+                function savePosition() {
+                    var list = document.getElementById('channelList');
+                    var state = {
+                        top: list ? list.scrollTop : 0,
+                        focusIndex: typeof focusedChannelIndex === 'number' ? focusedChannelIndex : 0,
+                        focusUrl: typeof tvFocusedChannelUrl === 'string' ? tvFocusedChannelUrl : null,
+                        activeIndex: typeof activeIndex === 'number' ? activeIndex : -1
+                    };
+                    window.__apkSavedPlayerPosition = state;
+                    try { localStorage.setItem('__apkPlayerPosition', JSON.stringify(state)); } catch (e) {}
+                }
                 function move(delta) {
-                    var list = items();
+                    var list = getItems();
                     if (!list.length || typeof focusChannel !== 'function') return;
                     var current = list.indexOf(document.activeElement);
                     if (current < 0 && typeof focusedChannelIndex === 'number') current = focusedChannelIndex;
                     var next = Math.max(0, Math.min(list.length - 1, current + delta));
                     focusChannel(next);
+                    var el = list[next];
+                    if (el && !el.classList.contains('channel-filter-entry')) {
+                        var index = parseInt(el.getAttribute('data-index'), 10);
+                        if (!isNaN(index) && typeof playChannel === 'function') playChannel(index);
+                    }
+                    savePosition();
                 }
                 document.addEventListener('keydown', function(e) {
                     var key = e.key || '';
@@ -177,7 +209,8 @@ class MainActivity : Activity() {
                                 var list = document.getElementById('channelList');
                                 if (list) list.scrollTop = 0;
                                 if (typeof focusChannel === 'function') focusChannel(0);
-                            }, 550);
+                                savePosition();
+                            }, 650);
                         }
                         return;
                     }
@@ -202,6 +235,17 @@ class MainActivity : Activity() {
                         upHeld = false;
                     }
                 }, true);
+                var channelList = document.getElementById('channelList');
+                if (channelList) channelList.addEventListener('scroll', savePosition, {passive:true});
+                if (typeof focusChannel === 'function') {
+                    var originalFocusChannel = focusChannel;
+                    window.focusChannel = function(index) {
+                        var result = originalFocusChannel.apply(this, arguments);
+                        savePosition();
+                        return result;
+                    };
+                }
+                savePosition();
             })();
         """.trimIndent(), null)
     }
