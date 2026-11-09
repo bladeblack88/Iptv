@@ -145,7 +145,7 @@ class RemoteControlInstrumentedTest {
         press(KeyEvent.KEYCODE_DPAD_CENTER)
         assertEquals("0", evaluate("activeIndex"))
         press(KeyEvent.KEYCODE_DPAD_CENTER)
-        assertEquals("true", evaluate("document.body.classList.contains('tv-video-fullscreen').toString()"))
+        assertEquals("true", evaluate("document.body.classList.contains('tv-video-fullscreen')"))
     }
 
     @Test
