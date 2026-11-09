@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
@@ -339,6 +340,38 @@ class MainActivity : Activity() {
                 save();
             })();
         """.trimIndent(), null)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Android TV sends remote keys to the Activity first. Route the keys used
+        // by the web UI directly into its capture-phase handler instead of relying
+        // on whichever DOM element happens to own WebView focus.
+        if (customView != null || !::webView.isInitialized) {
+            return super.dispatchKeyEvent(event)
+        }
+
+        val key = when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> "ArrowUp"
+            KeyEvent.KEYCODE_DPAD_DOWN -> "ArrowDown"
+            KeyEvent.KEYCODE_DPAD_RIGHT -> "ArrowRight"
+            KeyEvent.KEYCODE_DPAD_CENTER,
+            KeyEvent.KEYCODE_ENTER,
+            KeyEvent.KEYCODE_NUMPAD_ENTER -> "Enter"
+            else -> return super.dispatchKeyEvent(event)
+        }
+
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            if (event.repeatCount == 0) {
+                val code = event.keyCode
+                webView.evaluateJavascript(
+                    "window.dispatchEvent(new KeyboardEvent('keydown', {key:'$key', keyCode:$code, which:$code, bubbles:true, cancelable:true}));",
+                    null
+                )
+            }
+            return true
+        }
+        if (event.action == KeyEvent.ACTION_UP) return true
+        return true
     }
 
     @Deprecated("Deprecated in Android")
