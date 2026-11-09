@@ -44,6 +44,7 @@ class MainActivity : Activity() {
 
         rootLayout = FrameLayout(this)
         webView = WebView(this)
+        webView.id = View.generateViewId()
         webView.layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
