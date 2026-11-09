@@ -142,20 +142,23 @@ class MainActivity : Activity() {
                 try { state = state || JSON.parse(localStorage.getItem('__apkPlayerPosition') || 'null'); } catch (e) {}
                 if (!state) return;
                 var list = document.getElementById('channelList');
-                if (list) list.scrollTop = Number(state.top) || 0;
-                if (state.focusUrl && typeof channels !== 'undefined') {
-                    tvFocusedChannelUrl = state.focusUrl;
-                    var items = typeof channelItems === 'function' ? channelItems() : [];
-                    var match = items.findIndex(function(el) {
-                        if (el.classList.contains('channel-filter-entry')) return false;
-                        var i = parseInt(el.getAttribute('data-index'), 10);
-                        return channels[i] && channels[i].url === state.focusUrl;
-                    });
-                    if (match >= 0 && typeof focusChannel === 'function') focusChannel(match);
-                } else if (typeof state.focusIndex === 'number' && typeof focusChannel === 'function') {
-                    focusChannel(state.focusIndex);
+                function apply() {
+                    if (state.focusUrl && typeof channels !== 'undefined') {
+                        var all = Array.prototype.slice.call(document.querySelectorAll('#channelList .channel'));
+                        var match = all.findIndex(function(el) {
+                            var i = parseInt(el.getAttribute('data-index'), 10);
+                            return !el.classList.contains('channel-filter-entry') && channels[i] && channels[i].url === state.focusUrl;
+                        });
+                        if (match >= 0 && typeof focusChannel === 'function') focusChannel(match);
+                        window.tvFocusedChannelUrl = state.focusUrl;
+                    } else if (typeof state.focusIndex === 'number' && typeof focusChannel === 'function') {
+                        focusChannel(state.focusIndex);
+                    }
+                    if (list) list.scrollTop = Math.max(0, Number(state.top) || 0);
+                    window.__apkSavedPlayerPosition = state;
                 }
-                window.__apkSavedPlayerPosition = state;
+                apply();
+                requestAnimationFrame(function() { requestAnimationFrame(apply); });
             })();
         """.trimIndent(), null)
     }
@@ -167,10 +170,6 @@ class MainActivity : Activity() {
                 if (window.__apkRemoteControlsInstalled) return;
                 window.__apkRemoteControlsInstalled = true;
 
-                var upTimer = null;
-                var upHeld = false;
-                var longPressMs = 2100;
-
                 function items() {
                     return Array.prototype.slice.call(document.querySelectorAll('#channelList .channel'));
                 }
@@ -178,40 +177,43 @@ class MainActivity : Activity() {
                     var active = document.activeElement;
                     var pos = all.indexOf(active);
                     if (pos >= 0) return pos;
-                    var saved = window.__apkSavedPlayerPosition;
-                    if (saved && saved.focusUrl && typeof channels !== 'undefined') {
+                    var url = window.tvFocusedChannelUrl || (window.__apkSavedPlayerPosition || {}).focusUrl;
+                    if (url && typeof channels !== 'undefined') {
                         return all.findIndex(function(el) {
                             var n = parseInt(el.getAttribute('data-index'), 10);
                             return !el.classList.contains('channel-filter-entry') &&
-                                channels[n] && channels[n].url === saved.focusUrl;
+                                channels[n] && channels[n].url === url;
                         });
                     }
                     return 0;
                 }
                 function save() {
-                    var all = items();
-                    var active = document.activeElement;
+                    var all = items(), active = document.activeElement;
                     var list = document.getElementById('channelList');
                     var n = active && active.classList && active.classList.contains('channel') ?
                         parseInt(active.getAttribute('data-index'), 10) : NaN;
-                    var state = {
-                        top: list ? list.scrollTop : 0,
-                        focusIndex: all.indexOf(active),
-                        focusUrl: !isNaN(n) && typeof channels !== 'undefined' && channels[n] ? channels[n].url : null,
-                        activeIndex: typeof activeIndex === 'number' ? activeIndex : -1
-                    };
+                    var url = !isNaN(n) && typeof channels !== 'undefined' && channels[n] ? channels[n].url :
+                        (window.tvFocusedChannelUrl || (window.__apkSavedPlayerPosition || {}).focusUrl || null);
+                    var state = {top:list ? list.scrollTop : 0, focusIndex:all.indexOf(active),
+                        focusUrl:url, activeIndex:typeof activeIndex === 'number' ? activeIndex : -1};
                     window.__apkSavedPlayerPosition = state;
-                    try { localStorage.setItem('__apkPlayerPosition', JSON.stringify(state)); } catch (e) {}
+                    try { localStorage.setItem('__apkPlayerPosition', JSON.stringify(state)); } catch(e) {}
                 }
-                function focusAt(pos) {
+                function focusAt(pos, wantedUrl) {
                     var all = items();
                     if (!all.length) return;
+                    if (wantedUrl) {
+                        var found = all.findIndex(function(el) {
+                            var n = parseInt(el.getAttribute('data-index'), 10);
+                            return !el.classList.contains('channel-filter-entry') &&
+                                typeof channels !== 'undefined' && channels[n] && channels[n].url === wantedUrl;
+                        });
+                        if (found >= 0) pos = found;
+                    }
                     pos = Math.max(0, Math.min(all.length - 1, pos));
                     all.forEach(function(el) { el.classList.remove('tv-focused'); });
                     var target = all[pos];
-                    target.classList.add('tv-focused');
-                    target.tabIndex = 0;
-                    target.focus();
+                    target.classList.add('tv-focused'); target.tabIndex = 0; target.focus();
                     target.scrollIntoView({block:'nearest'});
                     var n = parseInt(target.getAttribute('data-index'), 10);
                     window.tvFocusedChannelUrl = !isNaN(n) && typeof channels !== 'undefined' && channels[n] ? channels[n].url : null;
@@ -219,41 +221,45 @@ class MainActivity : Activity() {
                 }
                 function move(delta) {
                     var all = items();
-                    if (!all.length) return;
-                    var pos = currentPosition(all);
-                    if (pos < 0) pos = 0;
-                    focusAt(pos + delta);
+                    if (all.length) focusAt(Math.max(0, currentPosition(all)) + delta);
                 }
                 function activate() {
-                    var all = items();
-                    var pos = currentPosition(all);
-                    if (pos < 0 || !all[pos]) return;
-                    var target = all[pos];
+                    var all = items(), pos = currentPosition(all), target = all[pos];
+                    if (!target) return;
                     if (target.classList.contains('channel-filter-entry')) {
-                        target.onclick && target.onclick.call(target);
+                        if (target.onclick) target.onclick.call(target);
                         return;
                     }
                     var n = parseInt(target.getAttribute('data-index'), 10);
                     if (!isNaN(n) && typeof playChannel === 'function') {
                         window.tvFocusedChannelUrl = channels[n] ? channels[n].url : null;
-                        playChannel(n);
-                        save();
+                        playChannel(n); save();
                     }
                 }
+                function toggleFavorite() {
+                    var all = items(), pos = currentPosition(all), target = all[pos];
+                    if (!target || target.classList.contains('channel-filter-entry')) return;
+                    var n = parseInt(target.getAttribute('data-index'), 10);
+                    if (isNaN(n) || typeof toggleFavoriteByIndex !== 'function') return;
+                    var url = channels[n] && channels[n].url;
+                    var top = document.getElementById('channelList')?.scrollTop || 0;
+                    window.tvFocusedChannelUrl = url;
+                    toggleFavoriteByIndex(n);
+                    var updated = items();
+                    var found = updated.findIndex(function(el) {
+                        var i = parseInt(el.getAttribute('data-index'), 10);
+                        return !el.classList.contains('channel-filter-entry') && channels[i] && channels[i].url === url;
+                    });
+                    if (found >= 0) focusAt(found, url);
+                    var list = document.getElementById('channelList');
+                    if (list) list.scrollTop = top;
+                    save();
+                }
                 document.addEventListener('keydown', function(e) {
-                    var key = e.key || '';
-                    var code = e.keyCode;
+                    var key = e.key || '', code = e.keyCode;
                     if (key === 'ArrowUp' || code === 19) {
                         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-                        if (!upTimer) {
-                            upHeld = false;
-                            upTimer = setTimeout(function() {
-                                upHeld = true;
-                                var list = document.getElementById('channelList');
-                                if (list) list.scrollTop = 0;
-                                focusAt(0);
-                            }, longPressMs);
-                        }
+                        if (!e.repeat) move(-1);
                         return;
                     }
                     if (key === 'ArrowDown' || code === 20) {
@@ -261,23 +267,18 @@ class MainActivity : Activity() {
                         if (!e.repeat) move(1);
                         return;
                     }
+                    if (key === 'ArrowRight' || code === 22) {
+                        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+                        if (!e.repeat) toggleFavorite();
+                        return;
+                    }
                     if (key === 'Enter' || key === ' ' || code === 23 || code === 66) {
                         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
                         if (!e.repeat) activate();
                     }
                 }, true);
-                document.addEventListener('keyup', function(e) {
-                    if (e.key === 'ArrowUp' || e.keyCode === 19) {
-                        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-                        if (upTimer) clearTimeout(upTimer);
-                        upTimer = null;
-                        if (!upHeld) move(-1);
-                        upHeld = false;
-                    }
-                }, true);
-
-                var channelList = document.getElementById('channelList');
-                if (channelList) channelList.addEventListener('scroll', save, {passive:true});
+                var list = document.getElementById('channelList');
+                if (list) list.addEventListener('scroll', save, {passive:true});
                 save();
             })();
         """.trimIndent(), null)
