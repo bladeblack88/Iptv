@@ -166,86 +166,119 @@ class MainActivity : Activity() {
             (function() {
                 if (window.__apkRemoteControlsInstalled) return;
                 window.__apkRemoteControlsInstalled = true;
+
                 var upTimer = null;
                 var upHeld = false;
-                var lastKeyAt = 0;
-                function getItems() {
-                    return typeof channelItems === 'function' ? channelItems() : [];
+                var longPressMs = 650;
+
+                function items() {
+                    return Array.prototype.slice.call(document.querySelectorAll('#channelList .channel'));
                 }
-                function savePosition() {
+                function currentPosition(all) {
+                    var active = document.activeElement;
+                    var pos = all.indexOf(active);
+                    if (pos >= 0) return pos;
+                    var saved = window.__apkSavedPlayerPosition;
+                    if (saved && saved.focusUrl && typeof channels !== 'undefined') {
+                        return all.findIndex(function(el) {
+                            var n = parseInt(el.getAttribute('data-index'), 10);
+                            return !el.classList.contains('channel-filter-entry') &&
+                                channels[n] && channels[n].url === saved.focusUrl;
+                        });
+                    }
+                    return 0;
+                }
+                function save() {
+                    var all = items();
+                    var active = document.activeElement;
                     var list = document.getElementById('channelList');
+                    var n = active && active.classList && active.classList.contains('channel') ?
+                        parseInt(active.getAttribute('data-index'), 10) : NaN;
                     var state = {
                         top: list ? list.scrollTop : 0,
-                        focusIndex: typeof focusedChannelIndex === 'number' ? focusedChannelIndex : 0,
-                        focusUrl: typeof tvFocusedChannelUrl === 'string' ? tvFocusedChannelUrl : null,
+                        focusIndex: all.indexOf(active),
+                        focusUrl: !isNaN(n) && typeof channels !== 'undefined' && channels[n] ? channels[n].url : null,
                         activeIndex: typeof activeIndex === 'number' ? activeIndex : -1
                     };
                     window.__apkSavedPlayerPosition = state;
                     try { localStorage.setItem('__apkPlayerPosition', JSON.stringify(state)); } catch (e) {}
                 }
+                function focusAt(pos) {
+                    var all = items();
+                    if (!all.length) return;
+                    pos = Math.max(0, Math.min(all.length - 1, pos));
+                    all.forEach(function(el) { el.classList.remove('tv-focused'); });
+                    var target = all[pos];
+                    target.classList.add('tv-focused');
+                    target.tabIndex = 0;
+                    target.focus();
+                    target.scrollIntoView({block:'nearest'});
+                    var n = parseInt(target.getAttribute('data-index'), 10);
+                    window.tvFocusedChannelUrl = !isNaN(n) && typeof channels !== 'undefined' && channels[n] ? channels[n].url : null;
+                    save();
+                }
                 function move(delta) {
-                    var list = getItems();
-                    if (!list.length || typeof focusChannel !== 'function') return;
-                    var current = list.indexOf(document.activeElement);
-                    if (current < 0 && typeof focusedChannelIndex === 'number') current = focusedChannelIndex;
-                    var next = Math.max(0, Math.min(list.length - 1, current + delta));
-                    focusChannel(next);
-                    var el = list[next];
-                    if (el && !el.classList.contains('channel-filter-entry')) {
-                        var index = parseInt(el.getAttribute('data-index'), 10);
-                        if (!isNaN(index) && typeof playChannel === 'function') playChannel(index);
+                    var all = items();
+                    if (!all.length) return;
+                    var pos = currentPosition(all);
+                    if (pos < 0) pos = 0;
+                    focusAt(pos + delta);
+                }
+                function activate() {
+                    var all = items();
+                    var pos = currentPosition(all);
+                    if (pos < 0 || !all[pos]) return;
+                    var target = all[pos];
+                    if (target.classList.contains('channel-filter-entry')) {
+                        target.onclick && target.onclick.call(target);
+                        return;
                     }
-                    savePosition();
+                    var n = parseInt(target.getAttribute('data-index'), 10);
+                    if (!isNaN(n) && typeof playChannel === 'function') {
+                        window.tvFocusedChannelUrl = channels[n] ? channels[n].url : null;
+                        playChannel(n);
+                        save();
+                    }
                 }
                 document.addEventListener('keydown', function(e) {
                     var key = e.key || '';
                     var code = e.keyCode;
                     if (key === 'ArrowUp' || code === 19) {
-                        e.preventDefault(); e.stopImmediatePropagation();
+                        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
                         if (!upTimer) {
                             upHeld = false;
                             upTimer = setTimeout(function() {
                                 upHeld = true;
                                 var list = document.getElementById('channelList');
                                 if (list) list.scrollTop = 0;
-                                if (typeof focusChannel === 'function') focusChannel(0);
-                                savePosition();
-                            }, 650);
+                                focusAt(0);
+                            }, longPressMs);
                         }
                         return;
                     }
                     if (key === 'ArrowDown' || code === 20) {
-                        e.preventDefault(); e.stopImmediatePropagation();
+                        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
                         if (!e.repeat) move(1);
                         return;
                     }
                     if (key === 'Enter' || key === ' ' || code === 23 || code === 66) {
-                        var active = document.activeElement;
-                        if (active && active.classList && active.classList.contains('channel')) {
-                            e.preventDefault(); e.stopImmediatePropagation(); active.click();
-                        }
+                        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+                        if (!e.repeat) activate();
                     }
                 }, true);
                 document.addEventListener('keyup', function(e) {
                     if (e.key === 'ArrowUp' || e.keyCode === 19) {
-                        e.preventDefault(); e.stopImmediatePropagation();
+                        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
                         if (upTimer) clearTimeout(upTimer);
                         upTimer = null;
                         if (!upHeld) move(-1);
                         upHeld = false;
                     }
                 }, true);
+
                 var channelList = document.getElementById('channelList');
-                if (channelList) channelList.addEventListener('scroll', savePosition, {passive:true});
-                if (typeof focusChannel === 'function') {
-                    var originalFocusChannel = focusChannel;
-                    window.focusChannel = function(index) {
-                        var result = originalFocusChannel.apply(this, arguments);
-                        savePosition();
-                        return result;
-                    };
-                }
-                savePosition();
+                if (channelList) channelList.addEventListener('scroll', save, {passive:true});
+                save();
             })();
         """.trimIndent(), null)
     }
