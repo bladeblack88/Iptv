@@ -34,6 +34,7 @@ class RemoteControlInstrumentedTest {
         context.startActivity(
             Intent(context, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                .putExtra(MainActivity.EXTRA_TEST_MODE, true)
         )
 
         val deadline = System.currentTimeMillis() + 30_000
