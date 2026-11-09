@@ -589,6 +589,24 @@ body.ios-simulated-fullscreen {
     height:100% !important;
 }
 
+
+/* Официальный веб-плеер UNIVER TV */
+#officialPlayer {
+    width:100%; height:100%; min-height:0; flex:1 1 auto;
+    border:0; border-radius:18px; background:#000;
+}
+@media screen and (orientation: portrait) {
+    #officialPlayer { min-height:100px; }
+}
+@media screen and (orientation: landscape) {
+    #officialPlayer {
+        display:none;
+        width:100%; height:100%; min-height:0; flex:1 1 auto;
+        border:0; border-radius:0; margin:0; padding:0;
+        background:#000;
+    }
+}
+
 </style>
 </head>
 
@@ -616,6 +634,15 @@ body.ios-simulated-fullscreen {
             webkit-playsinline
             disableremoteplayback
         ></video>
+
+        <iframe
+            id="officialPlayer"
+            title="Официальный эфир UNIVER TV"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+            style="display:none"
+        ></iframe>
 
         <div id="now">Выберите канал</div>
 
@@ -672,6 +699,7 @@ var activeUrl = null;
 var hlsPlayer = null;
 
 var video = document.getElementById("video");
+var officialPlayer = document.getElementById("officialPlayer");
 var app = document.getElementById("app");
 
 // Отображаем состояние реального воспроизведения, а не только факт выбора канала.
@@ -1233,6 +1261,30 @@ function playChannel(index) {
     activeUrl = channel.url;
     document.getElementById("status").textContent = "Загрузка канала: " + channel.name;
 
+    // Для UNIVER TV используем официальный веб-плеер КФУ внутри IPTV.
+    // Прямой HLS-адрес канала пока не подтверждён.
+    var isUniverTV = /univer\\s*tv/i.test(channel.name) || /universmotri|strm\\.yandex/i.test(channel.url);
+    if (isUniverTV) {
+        video.pause();
+        if (hlsPlayer) {
+            hlsPlayer.destroy();
+            hlsPlayer = null;
+        }
+        video.removeAttribute("src");
+        video.load();
+        video.style.display = "none";
+        officialPlayer.style.display = "block";
+        officialPlayer.src = "https://dis.kpfu.ru/broadcast/";
+        document.getElementById("status").textContent =
+            "Открываем официальный эфир UNIVER TV. Если плеер не появится, сайт может запрещать встраивание.";
+        updateNowPlaying();
+        renderChannels();
+        return;
+    }
+
+    officialPlayer.style.display = "none";
+    officialPlayer.removeAttribute("src");
+    video.style.display = "block";
     video.pause();
     if (hlsPlayer) {
         hlsPlayer.destroy();
@@ -1295,6 +1347,9 @@ function playChannel(index) {
 
 function stopPlayer() {
 
+    officialPlayer.removeAttribute("src");
+    officialPlayer.style.display = "none";
+    video.style.display = "block";
     video.pause();
 
     video.removeAttribute("src");
