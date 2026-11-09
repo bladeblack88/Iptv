@@ -21,6 +21,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Use the exact website home-screen icon
+        run: |
+          mkdir -p app/src/main/res/drawable-nodpi
+          curl -fsSL "https://raw.githubusercontent.com/bladeblack88/Iptv/main/apple-touch-icon.png" -o app/src/main/res/drawable-nodpi/site_icon.png
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
