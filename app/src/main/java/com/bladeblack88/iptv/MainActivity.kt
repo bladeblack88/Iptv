@@ -169,7 +169,7 @@ class MainActivity : Activity() {
 
                 var upTimer = null;
                 var upHeld = false;
-                var longPressMs = 650;
+                var longPressMs = 2100;
 
                 function items() {
                     return Array.prototype.slice.call(document.querySelectorAll('#channelList .channel'));
