@@ -1243,8 +1243,8 @@ function loadEpg() {
             var channelNameToId = Object.create(null);
             function normalizeEpgName(value) {
                 return String(value || "").toLowerCase()
-                    .replace(/\\b(hd|uhd|4k|sd|1080p|720p|576p|480p)\\b/g, "")
-                    .replace(/[^\\p{L}\\p{N}]+/gu, "");
+                    .replace(/\b(hd|uhd|4k|sd|1080p|720p|576p|480p)\b/g, "")
+                    .replace(/[^\p{L}\p{N}]+/gu, "");
             }
             channels.forEach(function(channel) {
                 if (channel.epgId) wanted[channel.epgId] = true;
