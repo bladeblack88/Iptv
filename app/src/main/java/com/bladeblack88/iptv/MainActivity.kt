@@ -16,11 +16,11 @@ import android.widget.FrameLayout
 class MainActivity : Activity() {
     // Exposes a small, read-only marker so the website can distinguish the APK WebView
     // from a regular Android browser and hide its own APK download link.
-    class AppBridge {
+    class AppBridge(private val androidTv: Boolean) {
         @JavascriptInterface
         fun isNativeApp(): Boolean = true
         @JavascriptInterface
-        fun isAndroidTv(): Boolean = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        fun isAndroidTv(): Boolean = androidTv
     }
 
     private lateinit var webView: WebView
@@ -44,7 +44,7 @@ class MainActivity : Activity() {
             FrameLayout.LayoutParams.MATCH_PARENT
         )
         webView.settings.javaScriptEnabled = true
-        webView.addJavascriptInterface(AppBridge(), "AndroidApp")
+        webView.addJavascriptInterface(AppBridge(packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)), "AndroidApp")
         webView.settings.domStorageEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.loadsImagesAutomatically = true
