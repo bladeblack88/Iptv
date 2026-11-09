@@ -287,6 +287,17 @@ body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
     background:rgba(34,197,94,.07); font-size:10px; font-weight:800; letter-spacing:1px;
 }
 .brandlive i { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 10px #4ade80; }
+.android-download {
+    display:none; align-items:center; justify-content:center;
+    padding:8px 11px; border:1px solid rgba(167,139,250,.35);
+    border-radius:11px; color:#eeeaff; text-decoration:none;
+    background:linear-gradient(135deg,#7654df,#5937bd);
+    font-size:10px; font-weight:800; white-space:nowrap;
+}
+@media screen and (orientation: portrait) {
+    .android-download { padding:6px 8px; font-size:9px; }
+}
+
 #video {
     border:1px solid rgba(167,139,250,.3); border-radius:18px;
     background:#05050b; box-shadow:0 18px 55px rgba(0,0,0,.34);
@@ -621,6 +632,7 @@ body.ios-simulated-fullscreen {
                 <div class="brandtitle">IPTV <span>РОССИЯ</span></div>
                 <div class="brandcaption">ТЕЛЕВИДЕНИЕ В ОДНОМ МЕСТЕ</div>
             </div>
+            <a id="androidDownload" class="android-download" href="https://github.com/bladeblack88/Iptv/releases/download/apk-latest/app-debug.apk" style="display:none">⬇ Скачать APK</a>
             <div class="brandlive"><i></i> LIVE</div>
         </div>
 
@@ -673,6 +685,12 @@ body.ios-simulated-fullscreen {
 </div>
 
 <script>
+
+// Показываем ссылку на APK только в браузерах Android.
+if (/Android/i.test(navigator.userAgent)) {
+    var androidDownload = document.getElementById("androidDownload");
+    if (androidDownload) androidDownload.style.display = "inline-flex";
+}
 
 /* ОСНОВНЫЕ ПЕРЕМЕННЫЕ */
 
