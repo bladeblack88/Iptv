@@ -1208,6 +1208,7 @@ function renderChannels() {
         var item = document.createElement("div");
 
         item.className = "channel";
+        item.setAttribute("tabindex", "0");
 
         if (i === activeIndex) {
             item.className += " active";
@@ -1265,6 +1266,10 @@ function renderChannels() {
 
         item.onclick = function(event) {
             var channelItem = this;
+            if (document.body.classList.contains("tv-mode")) {
+                playChannel(parseInt(channelItem.getAttribute("data-index"), 10));
+                return;
+            }
             var index = parseInt(channelItem.getAttribute("data-index"), 10);
             var now = Date.now();
 
@@ -1284,6 +1289,10 @@ function renderChannels() {
         };
 
         list.appendChild(item);
+        if (document.body.classList.contains("tv-mode") && list.children.length === 1) {
+            item.classList.add("tv-focused");
+            item.focus();
+        }
 
     }
 
