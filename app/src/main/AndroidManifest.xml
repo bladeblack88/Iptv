@@ -3,8 +3,7 @@
     <application
         android:allowBackup="false"
         android:label="IPTV Player"
-        android:icon="@drawable/site_icon"
-        android:roundIcon="@drawable/site_icon"
+        android:icon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="true">
         <activity
