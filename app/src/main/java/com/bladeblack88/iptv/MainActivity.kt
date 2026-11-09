@@ -2,6 +2,7 @@ package com.bladeblack88.iptv
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.webkit.CookieManager
@@ -18,6 +19,8 @@ class MainActivity : Activity() {
     class AppBridge {
         @JavascriptInterface
         fun isNativeApp(): Boolean = true
+        @JavascriptInterface
+        fun isAndroidTv(): Boolean = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
     }
 
     private lateinit var webView: WebView
