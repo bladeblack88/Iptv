@@ -77,15 +77,24 @@ body {
     border-radius: 10px;
 }
 
-.player-welcome{position:absolute;z-index:3;left:10px;right:10px;top:104px;bottom:116px;border:1px solid #67458a;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;text-align:center;background:radial-gradient(ellipse at 50% 42%,#50316e 0%,#211331 55%,#100b1b 100%);box-shadow:inset 0 0 45px #9b65c51c}
-.player-welcome[hidden]{display:none!important}.welcome-kicker{color:#c9a5f0;font-size:10px;letter-spacing:3px;font-weight:bold}.welcome-kicker:first-letter{color:#9af0bf}
-.player-welcome h2{font-size:clamp(20px,3vw,34px);line-height:1.1;color:white;margin:10px 0 5px}.player-welcome h2 em{font-style:normal;color:#d5aaff}.player-welcome p{color:#c8b8d8;font-size:clamp(10px,1.3vw,13px);margin:4px 0}
-.remote-art{height:clamp(105px,19vh,160px);width:100%;display:flex;align-items:center;justify-content:center;position:relative}.remote{width:55px;height:clamp(100px,17vh,140px);border-radius:25px;background:linear-gradient(110deg,#59436f,#171020);border:2px solid #a27cc1;box-shadow:0 10px 28px #090510;transform:rotate(-9deg);position:relative}
-.power{position:absolute;top:12px;left:23px;width:8px;height:8px;border-radius:50%;background:#ff747e;box-shadow:0 0 9px #ff747e}.ring{position:absolute;top:40px;left:7px;width:37px;height:37px;border:3px solid #b89bd2;border-radius:50%;display:grid;place-items:center;background:#30213e;color:white;font-size:9px}.keys{position:absolute;bottom:10px;left:13px;color:#aa8bc4;font-size:10px;line-height:15px;letter-spacing:4px}
-.spark,.playmark{position:absolute;color:#e2c4ff;font-size:25px;text-shadow:0 0 15px #bd83ff}.spark{margin-left:-115px;margin-top:30px}.playmark{margin-left:110px;margin-top:-40px}
-.welcome-tips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;max-width:560px}.welcome-tips div{display:flex;flex-direction:column;gap:3px;padding:8px 4px;border:1px solid #be97e033;border-radius:9px;background:#ffffff0b}.welcome-tips b{align-self:center;min-width:32px;padding:4px;border-radius:5px;background:#70459a;color:white;font-size:11px}.welcome-tips strong{font-size:10px;color:white}.welcome-tips small{font-size:8px;color:#b9a9c9}.welcome-foot{margin-top:10px;color:#9b89aa;font-size:9px}
-@media(max-height:520px){.player-welcome{top:75px;bottom:95px;padding:6px}.player-welcome h2{font-size:20px}.remote-art{height:75px}.remote{height:72px}.welcome-foot{display:none}.welcome-tips div{padding:4px}}
-@media(max-width:600px){.welcome-tips{gap:4px}.welcome-tips small{display:none}}
+#left{position:relative;min-width:0}
+.player-welcome{position:absolute;z-index:3;left:10px;right:10px;top:104px;bottom:116px;border:1px solid #254d91;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(16px,3vw,30px);text-align:left;background:radial-gradient(ellipse at 28% 48%,#073c85 0%,#061b43 42%,#030a1d 100%);box-shadow:inset 0 0 55px #087dff24,0 8px 30px #0008}
+.player-welcome[hidden]{display:none!important}
+.welcome-glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 15% 85%,#007bff55,transparent 42%),radial-gradient(ellipse at 92% 12%,#743cff24,transparent 45%)}
+.welcome-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.welcome-brand{font-size:clamp(13px,1.8vw,20px);font-weight:800;letter-spacing:1px;color:#f3f7ff}.welcome-brand i{display:inline-block;width:24px;height:17px;border:2px solid #12c9ff;border-radius:5px;margin-right:8px;vertical-align:-3px;position:relative;box-shadow:0 0 14px #00aaff88}.welcome-brand i:before{content:"";position:absolute;width:8px;height:5px;border-top:2px solid #12c9ff;top:-7px;left:6px;transform:rotate(35deg)}
+.welcome-clock{color:#d8e8ff;font-size:clamp(11px,1.5vw,16px);opacity:.8}
+.welcome-main{position:relative;display:flex;align-items:center;justify-content:center;gap:clamp(14px,3vw,34px);flex:1;min-height:0}
+.welcome-tv{width:clamp(125px,27%,250px);aspect-ratio:1.25;position:relative;display:grid;place-items:center;flex-shrink:0;border:5px solid #4e9eff;border-radius:22px;background:linear-gradient(145deg,#06152f,#020817 70%);box-shadow:0 0 18px #008cff,0 0 48px #006dff88,inset 0 0 30px #1269d655;transform:perspective(400px) rotateY(-7deg)}
+.welcome-tv:before{content:"";position:absolute;bottom:-15px;left:22%;width:56%;height:9px;border-radius:50%;background:#6baeff;box-shadow:0 8px 14px #000}
+.welcome-tv:after{content:"";position:absolute;bottom:-28px;left:45%;width:10%;height:16px;background:linear-gradient(#7ebaff,#173c78);clip-path:polygon(35% 0,65% 0,100% 100%,0 100%)}
+.welcome-play{font-size:clamp(44px,8vw,82px);line-height:1;color:#c6f3ff;text-shadow:0 0 12px #00aaff,0 0 35px #007bff}
+.welcome-copy{max-width:390px;min-width:0}.welcome-kicker{color:#52cfff;font-size:clamp(9px,1.1vw,12px);letter-spacing:2px;font-weight:800}.player-welcome h2{font-size:clamp(19px,3vw,34px);line-height:1.12;color:#f5f8ff;margin:10px 0}.player-welcome h2 em{font-style:normal;color:#40cfff}.player-welcome p{color:#b9ccef;font-size:clamp(11px,1.45vw,16px);line-height:1.4;margin:5px 0}
+.welcome-tips{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;border:1px solid #3c69a477;border-radius:14px;padding:10px;background:#061634cc;box-shadow:0 8px 28px #0004}
+.welcome-tips div{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;padding:5px;border-right:1px solid #4a6d9c66}.welcome-tips div:last-child{border:0}.welcome-tips b{display:grid;place-items:center;min-width:31px;height:31px;padding:3px;border:1px solid #4ebeff;border-radius:50%;color:#e5f8ff;font-size:clamp(10px,1.3vw,14px);box-shadow:0 0 12px #168bff55}.welcome-tip-copy{display:flex;flex-direction:column;gap:3px}.welcome-tips strong{font-size:clamp(9px,1.15vw,13px);color:white}.welcome-tips small{font-size:clamp(8px,.9vw,10px);color:#9fbce4}.welcome-foot{position:relative;text-align:center;margin-top:8px;color:#8fb9ed;font-size:clamp(8px,1vw,11px)}
+.player-welcome.error-state{background:radial-gradient(ellipse at 28% 48%,#21165b 0%,#10132f 48%,#050918 100%);border-color:#5949a5}.player-welcome.error-state .welcome-glow{background:radial-gradient(ellipse at 15% 85%,#5734ff55,transparent 42%),radial-gradient(ellipse at 92% 12%,#167bff22,transparent 45%)}.player-welcome.error-state .welcome-tv{border-color:#879bff;box-shadow:0 0 20px #7777ff,0 0 45px #5734ff66}.player-welcome.error-state .welcome-play{color:#9caeff;text-shadow:0 0 18px #746bff}.player-welcome.error-state .welcome-kicker{color:#b4a6ff}
+@media(max-height:520px){.player-welcome{top:78px;bottom:92px;padding:10px}.welcome-tv{width:22%;border-radius:13px}.welcome-main{gap:15px}.player-welcome h2{font-size:clamp(17px,3vh,24px)}.welcome-tips{padding:5px}.welcome-tips div{padding:2px}.welcome-foot{display:none}}
+@media(max-width:600px){.welcome-main{gap:10px}.welcome-tv{width:25%}.welcome-tips{gap:2px;padding:5px}.welcome-tips div{gap:4px}.welcome-tips small{display:none}}
 /* Стандартные кнопки управления видео включены */
 #video::-webkit-media-controls {
     display: flex !important;
@@ -699,18 +708,21 @@ body.tv-mode.tv-video-fullscreen { overflow:hidden !important; }
             disableremoteplayback
         ></video>
         <div id="playerWelcome" class="player-welcome">
-          <div class="welcome-kicker">● IPTV • SMART TV</div>
-          <h2>Телевидение <em>в одном нажатии</em></h2>
-          <p id="welcomeSubtitle">Выберите канал справа, чтобы начать просмотр</p>
-          <div class="remote-art" aria-hidden="true"><div class="remote">
-            <i class="power"></i><div class="ring"><b>OK</b></div><div class="keys">● ●<br>● ●<br>● ●</div>
-          </div><span class="spark">✦</span><span class="playmark">▶</span></div>
-          <div class="welcome-tips">
-            <div><b>↑ ↓</b><strong>Каналы</strong><small>Переключение списка</small></div>
-            <div><b>OK</b><strong>Смотреть</strong><small>Повторный OK — полный экран</small></div>
-            <div><b>→</b><strong>Избранное</strong><small>На выбранном канале</small></div>
+          <div class="welcome-glow"></div>
+          <div class="welcome-head"><div class="welcome-brand"><i></i> IPTV</div><div class="welcome-clock">LIVE&nbsp; • &nbsp;TV</div></div>
+          <div class="welcome-main">
+            <div class="welcome-tv" aria-hidden="true"><span class="welcome-play">▶</span></div>
+            <div class="welcome-copy"><div class="welcome-kicker" id="welcomeKicker">ВАШ ТЕЛЕВИЗИОННЫЙ МИР</div>
+              <h2 id="welcomeTitle">Выберите канал<br><em>и наслаждайтесь просмотром!</em></h2>
+              <p id="welcomeSubtitle">Нажмите OK на выбранном канале, чтобы начать просмотр</p>
+            </div>
           </div>
-          <small class="welcome-foot">Выберите канал и устраивайтесь поудобнее</small>
+          <div class="welcome-tips">
+            <div><b>↑ ↓</b><span class="welcome-tip-copy"><strong>Каналы</strong><small>Переключение</small></span></div>
+            <div><b>OK</b><span class="welcome-tip-copy"><strong>Запуск</strong><small>Повторный OK — полный экран</small></span></div>
+            <div><b>♥</b><span class="welcome-tip-copy"><strong>Избранное</strong><small>Кнопка → на канале</small></span></div>
+          </div>
+          <small class="welcome-foot">Приятного просмотра!</small>
         </div>
 
         <iframe
@@ -804,10 +816,15 @@ video.addEventListener("playing", function() {
     if (activeUrl) document.getElementById("status").textContent = "▶ Воспроизведение началось";
 });
 var playerWelcome = document.getElementById("playerWelcome");
-function showPlayerWelcome(message) {
+function showPlayerWelcome(message, isError) {
   if (!playerWelcome) return;
   var subtitle = document.getElementById("welcomeSubtitle");
-  if (subtitle) subtitle.textContent = message || "Выберите канал справа, чтобы начать просмотр";
+  var title = document.getElementById("welcomeTitle");
+  var kicker = document.getElementById("welcomeKicker");
+  if (subtitle) subtitle.textContent = message || "Нажмите OK на выбранном канале, чтобы начать просмотр";
+  if (title) title.innerHTML = isError ? "Канал <em>недоступен</em>" : "Выберите канал<br><em>и наслаждайтесь просмотром!</em>";
+  if (kicker) kicker.textContent = isError ? "НЕ УДАЛОСЬ НАЧАТЬ ВОСПРОИЗВЕДЕНИЕ" : "ВАШ ТЕЛЕВИЗИОННЫЙ МИР";
+  playerWelcome.classList.toggle("error-state", !!isError);
   playerWelcome.hidden = false;
 }
 function hidePlayerWelcome() { if (playerWelcome) playerWelcome.hidden = true; }
@@ -830,7 +847,7 @@ video.addEventListener("error", function() {
     };
     document.getElementById("status").textContent =
         messages[video.error.code] || "Не удалось открыть видеопоток";
-    showPlayerWelcome("Канал не запустился. Попробуйте выбрать другой или повторить запуск.");
+    showPlayerWelcome("Попробуйте выбрать другой канал или повторить запуск.", true);
 });
 
 // Восстановление воспроизведения после нативного fullscreen в iOS Safari.
