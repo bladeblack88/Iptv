@@ -353,6 +353,7 @@ button:disabled { opacity:.35; }
     position:absolute; top:8px; right:9px; color:#ff668f;
     font-size:16px; line-height:1; opacity:.95;
 }
+.channelFavoriteHeart.is-not-favorite { color:rgba(190,180,215,.42); }
 #favoriteFilterButton {
     flex:0 0 auto; padding:9px 13px; border-radius:11px;
     background:linear-gradient(135deg,#7654df,#5937bd);
@@ -714,14 +715,6 @@ video.addEventListener("click", function(event) {
     videoTapTimer = setTimeout(function() {
         videoTapTimer = null;
     }, 350);
-});
-
-video.addEventListener("dblclick", function(event) {
-    if (event) event.preventDefault();
-    if (videoTapTimer) clearTimeout(videoTapTimer);
-    videoTapTimer = null;
-    videoLastTap = 0;
-    toggleFullscreen();
 });
 
 /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
@@ -1139,13 +1132,12 @@ function renderChannels() {
         textWrap.appendChild(name);
         item.appendChild(textWrap);
 
-        if (isFavorite(channel.url)) {
-            var heart = document.createElement("span");
-            heart.className = "channelFavoriteHeart";
-            heart.textContent = "♥";
-            heart.setAttribute("aria-label", "В избранном");
-            item.appendChild(heart);
-        }
+        var heart = document.createElement("span");
+        heart.className = "channelFavoriteHeart";
+        heart.textContent = isFavorite(channel.url) ? "♥" : "♡";
+        heart.setAttribute("aria-label", isFavorite(channel.url) ? "В избранном" : "Не в избранном");
+        if (!isFavorite(channel.url)) heart.className += " is-not-favorite";
+        item.appendChild(heart);
 
         item.setAttribute("data-index", i);
 
