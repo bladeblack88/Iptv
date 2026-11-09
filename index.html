@@ -777,6 +777,8 @@ var checkUnverified = 0;
 var activeUrl = null;
 var tvFocusedChannelUrl = null;
 var hlsPlayer = null;
+var dashPlayer = null;
+var mpegtsPlayer = null;
 
 var video = document.getElementById("video");
 var officialPlayer = document.getElementById("officialPlayer");
@@ -1429,30 +1431,25 @@ function renderChannels() {
 /* ВОСПРОИЗВЕДЕНИЕ */
 
 function playChannel(index) {
-
     if (index < 0 || index >= channels.length) return;
-
     activeIndex = index;
     var channel = channels[index];
     activeUrl = channel.url;
-    document.getElementById("status").textContent = "Загрузка канала: " + channel.name;
+    var status = document.getElementById("status");
+    status.textContent = "Подключаем канал: " + channel.name;
 
-    // Для UNIVER TV используем официальный веб-плеер КФУ внутри IPTV.
-    // Прямой HLS-адрес канала пока не подтверждён.
     var isUniverTV = /univer\s*tv/i.test(channel.name) || /universmotri|strm\.yandex/i.test(channel.url);
     if (isUniverTV) {
+        if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
+        if (dashPlayer) { try { dashPlayer.reset(); } catch (e) {} dashPlayer = null; }
+        if (mpegtsPlayer) { try { mpegtsPlayer.destroy(); } catch (e) {} mpegtsPlayer = null; }
         video.pause();
-        if (hlsPlayer) {
-            hlsPlayer.destroy();
-            hlsPlayer = null;
-        }
         video.removeAttribute("src");
         video.load();
         video.style.display = "none";
         officialPlayer.style.display = "block";
         officialPlayer.src = "https://dis.kpfu.ru/broadcast/";
-        document.getElementById("status").textContent =
-            "Открываем официальный эфир UNIVER TV. Если плеер не появится, сайт может запрещать встраивание.";
+        status.textContent = "Открываем официальный эфир UNIVER TV";
         updateNowPlaying();
         renderChannels();
         return;
@@ -1462,104 +1459,102 @@ function playChannel(index) {
     officialPlayer.removeAttribute("src");
     video.style.display = "block";
     video.pause();
-    if (hlsPlayer) {
-        hlsPlayer.destroy();
-        hlsPlayer = null;
-    }
-
+    if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
+    if (dashPlayer) { try { dashPlayer.reset(); } catch (e) {} dashPlayer = null; }
+    if (mpegtsPlayer) { try { mpegtsPlayer.destroy(); } catch (e) {} mpegtsPlayer = null; }
     video.removeAttribute("src");
     video.load();
 
-    var isHls = /\.m3u8(?:$|\?)/i.test(channel.url);
+    var url = channel.url;
+    var path = url.split(/[?#]/)[0].toLowerCase();
+    var isDash = /\.mpd$/i.test(path);
+    var isHls = /\.m3u8$/i.test(path) || /\.m3u8[?#]/i.test(url);
+    var isTransportStream = /\.(ts|m2ts)$/i.test(path);
 
-    var nativeHls = isHls && video.canPlayType("application/vnd.apple.mpegurl");
-    if (isHls && window.Hls && Hls.isSupported()) {
-        hlsPlayer = new Hls({
-            enableWorker: true,
-            lowLatencyMode: false,
-            // Умеренный запас буфера сглаживает кратковременные просадки Wi-Fi.
-            maxBufferLength: 45,
-            maxMaxBufferLength: 75,
-            maxBufferSize: 50 * 1000 * 1000,
-            backBufferLength: 15,
-            maxBufferHole: 0.5,
-            highBufferWatchdogPeriod: 2,
-            nudgeOffset: 0.1,
-            nudgeMaxRetry: 5,
-            capLevelToPlayerSize: true,
-            startLevel: -1,
-            abrEwmaDefaultEstimate: 5000000,
-            manifestLoadingMaxRetry: 4,
-            levelLoadingMaxRetry: 4,
-            fragLoadingMaxRetry: 6,
-            fragLoadingRetryDelay: 1000,
-            fragLoadingMaxRetryTimeout: 64000
-        });
-
-        var currentHls = hlsPlayer;
-        currentHls.attachMedia(video);
-        currentHls.loadSource(channel.url);
-
-        currentHls.on(Hls.Events.MANIFEST_PARSED, function() {
-            if (hlsPlayer !== currentHls) return;
-            var result = video.play();
-            if (result && result.catch) {
-                result.catch(function() {
-                    if (hlsPlayer === currentHls) {
-                        document.getElementById("status").textContent =
-                            "Нажмите ▶ на плеере, чтобы начать просмотр";
-                    }
-                });
-            }
-        });
-
-        currentHls.on(Hls.Events.ERROR, function(event, data) {
-            if (!data.fatal || hlsPlayer !== currentHls) return;
-            var detail = data.details || data.type || "ошибка потока";
-            currentHls.destroy();
-            hlsPlayer = null;
-
-            // Некоторые телевизоры лучше декодируют тот же HLS нативным плеером.
-            if (nativeHls) {
-                document.getElementById("status").textContent =
-                    "Переключаем канал на встроенный видеоплеер…";
-                video.src = channel.url;
-                video.load();
-                var fallbackPlay = video.play();
-                if (fallbackPlay && fallbackPlay.catch) {
-                    fallbackPlay.catch(function() {
-                        document.getElementById("status").textContent =
-                            "Не удалось запустить канал (HLS: " + detail + "). Возможно, источник недоступен.";
-                    });
-                }
-            } else {
-                document.getElementById("status").textContent =
-                    "Не удалось запустить HLS (" + detail + "). Возможно, источник недоступен, ограничивает доступ или требует другой кодек.";
-            }
-        });
-    } else if (nativeHls) {
-        video.src = channel.url;
+    function playDirect(message) {
+        video.src = url;
         video.load();
-        var nativeResult = video.play();
-        if (nativeResult && nativeResult.catch) {
-            nativeResult.catch(function() {
-                document.getElementById("status").textContent =
-                    "Не удалось запустить поток. Проверьте доступность канала или нажмите ▶.";
-            });
-        }
-    } else {
-        video.src = channel.url;
-        video.load();
-
-        var result = video.play();
-        if (result && result.catch) {
-            result.catch(function() {
-                document.getElementById("status").textContent =
-                    "Автозапуск не разрешён или поток недоступен. Нажмите ▶ на плеере.";
+        status.textContent = message || "Пробуем встроенный видеодекодер…";
+        var directPromise = video.play();
+        if (directPromise && directPromise.catch) {
+            directPromise.catch(function(error) {
+                status.textContent = "Не удалось запустить поток: " +
+                    (error && error.message ? error.message : "формат не поддерживается или источник недоступен");
             });
         }
     }
 
+    if (isDash && window.dashjs && dashjs.MediaPlayer) {
+        try {
+            dashPlayer = dashjs.MediaPlayer().create();
+            dashPlayer.initialize(video, url, true);
+            dashPlayer.on(dashjs.MediaPlayer.events.ERROR, function() {
+                status.textContent = "Ошибка DASH. Пробуем встроенный декодер…";
+                if (dashPlayer) { try { dashPlayer.reset(); } catch (e) {} dashPlayer = null; }
+                playDirect();
+            });
+        } catch (dashError) {
+            dashPlayer = null;
+            playDirect("Не удалось запустить DASH. Пробуем другой режим…");
+        }
+    } else if (isTransportStream && window.mpegts && mpegts.isSupported()) {
+        try {
+            mpegtsPlayer = mpegts.createPlayer({type:"mpegts", url:url, isLive:true, cors:true, withCredentials:false}, {
+                enableWorker:true, enableStashBuffer:true, stashInitialSize:262144, liveBufferLatencyChasing:true
+            });
+            mpegtsPlayer.attachMediaElement(video);
+            mpegtsPlayer.load();
+            var tsPromise = mpegtsPlayer.play();
+            if (tsPromise && tsPromise.catch) tsPromise.catch(function() {
+                status.textContent = "Не удалось запустить MPEG-TS поток.";
+            });
+            mpegtsPlayer.on(mpegts.Events.ERROR, function(type, detail) {
+                status.textContent = "Ошибка MPEG-TS: " + detail;
+            });
+        } catch (tsError) {
+            mpegtsPlayer = null;
+            playDirect("Пробуем встроенный декодер MPEG-TS…");
+        }
+    } else if ((isHls || !isDash) && window.Hls && Hls.isSupported()) {
+        // Некоторые IPTV-серверы скрывают .m3u8 в URL, поэтому проверяем и адреса без расширения.
+        hlsPlayer = new Hls({
+            enableWorker:true, lowLatencyMode:false, backBufferLength:30,
+            maxBufferLength:30, maxMaxBufferLength:60, maxBufferSize:41943040,
+            maxBufferHole:0.5, manifestLoadingMaxRetry:6, levelLoadingMaxRetry:6,
+            fragLoadingMaxRetry:8, manifestLoadingRetryDelay:1000,
+            levelLoadingRetryDelay:1000, fragLoadingRetryDelay:1000,
+            manifestLoadingMaxRetryTimeout:30000, levelLoadingMaxRetryTimeout:30000,
+            fragLoadingMaxRetryTimeout:60000
+        });
+        var currentHls = hlsPlayer;
+        currentHls.attachMedia(video);
+        currentHls.on(Hls.Events.MEDIA_ATTACHED, function() {
+            if (hlsPlayer === currentHls) currentHls.loadSource(url);
+        });
+        currentHls.on(Hls.Events.MANIFEST_PARSED, function() {
+            if (hlsPlayer !== currentHls) return;
+            status.textContent = "Поток загружен: " + channel.name;
+            var promise = video.play();
+            if (promise && promise.catch) promise.catch(function() {
+                status.textContent = "Нажмите OK ещё раз для запуска видео.";
+            });
+        });
+        currentHls.on(Hls.Events.ERROR, function(event, data) {
+            if (hlsPlayer !== currentHls) return;
+            if (!data.fatal) {
+                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) status.textContent = "Восстанавливаем соединение…";
+                return;
+            }
+            var detail = data.details || data.type || "ошибка HLS";
+            currentHls.destroy();
+            hlsPlayer = null;
+            status.textContent = "HLS (" + detail + "). Пробуем встроенный декодер…";
+            // canPlayType на некоторых WebView возвращает пустую строку даже при наличии системного декодера.
+            playDirect();
+        });
+    } else {
+        playDirect(isHls ? "HLS.js недоступен. Пробуем системный декодер…" : "Запускаем встроенным видеодекодером…");
+    }
     updateNowPlaying();
     renderChannels();
 }
