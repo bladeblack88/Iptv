@@ -1,10 +1,12 @@
 name: Website browser smoke test
 
 on:
-  workflow_run:
-    workflows: ["Deploy IPTV"]
-    types: [completed]
+  push:
     branches: [main]
+    paths:
+      - "index.html"
+      - "working.m3u"
+      - ".github/workflows/website-smoke-test.yml"
 
 permissions:
   contents: read
@@ -20,6 +22,9 @@ jobs:
           npm init -y
           npm install --no-save playwright
           npx playwright install --with-deps chromium
+
+      - name: Wait for Pages deployment
+        run: sleep 75
 
       - name: Open published website and verify channels
         run: |
