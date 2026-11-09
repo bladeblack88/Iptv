@@ -1195,6 +1195,7 @@ function parseM3U(data) {
 /* ЗАГРУЗКА EPG: XMLTV */
 var epgProgramsById = Object.create(null);
 var epgLoaded = false;
+var epgLoadFailed = false;
 var EPG_URL = "https://iptvx.one/epg/epg.xml.gz";
 
 function parseXmltvTime(value) {
@@ -1240,7 +1241,8 @@ function loadEpg() {
             var xml = new DOMParser().parseFromString(xmlText, "application/xml");
             if (xml.querySelector("parsererror")) throw new Error("Некорректный XMLTV");
             var wanted = Object.create(null);
-            var channelNameToId = Object.create(null);
+            var playlistChannelsByName = Object.create(null);
+            var xmlChannelIds = Object.create(null);
             function normalizeEpgName(value) {
                 return String(value || "").toLowerCase()
                     .replace(/\b(hd|uhd|4k|sd|1080p|720p|576p|480p)\b/g, "")
@@ -1249,28 +1251,23 @@ function loadEpg() {
             channels.forEach(function(channel) {
                 if (channel.epgId) wanted[channel.epgId] = true;
                 var key = normalizeEpgName(channel.name);
-                if (key) channelNameToId[key] = channel.epgId || "";
+                if (key) playlistChannelsByName[key] = channel;
             });
             var xmlChannels = xml.getElementsByTagName("channel");
             for (var c = 0; c < xmlChannels.length; c++) {
                 var xmlChannel = xmlChannels[c];
                 var xmlId = xmlChannel.getAttribute("id");
+                xmlChannelIds[xmlId] = true;
                 var displayNames = xmlChannel.getElementsByTagName("display-name");
                 for (var dn = 0; dn < displayNames.length; dn++) {
                     var normalized = normalizeEpgName(displayNames[dn].textContent);
-                    if (normalized && channelNameToId[normalized] === "") {
-                        channelNameToId[normalized] = xmlId;
+                    var matchedChannel = normalized && playlistChannelsByName[normalized];
+                    if (matchedChannel && (!matchedChannel.epgId || !xmlChannelIds[matchedChannel.epgId])) {
+                        matchedChannel.epgId = xmlId;
+                        wanted[xmlId] = true;
                     }
                 }
             }
-            channels.forEach(function(channel) {
-                if (channel.epgId && wanted[channel.epgId]) return;
-                var matchedId = channelNameToId[normalizeEpgName(channel.name)];
-                if (matchedId) {
-                    channel.epgId = matchedId;
-                    wanted[matchedId] = true;
-                }
-            });
             var programmes = xml.getElementsByTagName("programme");
             var now = Date.now();
             for (var i = 0; i < programmes.length; i++) {
@@ -1290,11 +1287,13 @@ function loadEpg() {
                 epgProgramsById[id].sort(function(a,b) { return a.start-b.start; });
             });
             epgLoaded = true;
+            epgLoadFailed = false;
             refreshChannelPrograms();
         })
         .catch(function(error) {
             console.warn("EPG не загружена:", error);
             epgLoaded = false;
+            epgLoadFailed = true;
             channels.forEach(function(channel) { channel.currentProgram = ""; });
             if (typeof renderChannels === "function") renderChannels();
         });
@@ -1450,7 +1449,7 @@ function renderChannels() {
         textWrap.appendChild(name);
         var program = document.createElement("span");
         program.className = "channelProgram";
-        program.textContent = channel.currentProgram || (epgLoaded ? "Программа не найдена" : "Загрузка программы…");
+        program.textContent = channel.currentProgram || (epgLoadFailed ? "Телепрограмма недоступна" : (epgLoaded ? "Программа не найдена" : "Загрузка программы…"));
         textWrap.appendChild(program);
         item.appendChild(textWrap);
         var heart = document.createElement("span");
