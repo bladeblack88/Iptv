@@ -64,16 +64,6 @@ jobs:
           disable-animations: true
           script: |
             gradle --no-daemon connectedDebugAndroidTest
-            mkdir -p emulator-screenshots
-            adb pull /sdcard/iptv-*.png emulator-screenshots/
-      - name: Upload emulator screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Android-emulator-screenshots
-          path: emulator-screenshots/*.png
-          if-no-files-found: warn
-          retention-days: 30
 
   build:
     runs-on: ubuntu-24.04
