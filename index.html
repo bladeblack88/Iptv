@@ -65,6 +65,32 @@ body {
     background: #241534;
 }
 
+#welcomeScreen {
+    position:relative; flex:1; min-height:0; width:100%; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:12px 24px 20px; border:1px solid rgba(173,112,226,.42); border-radius:13px;
+    background:radial-gradient(ellipse at 50% 38%, #432365 0%, #21132f 48%, #100b19 100%);
+    box-shadow:inset 0 0 65px rgba(140,76,198,.13);
+}
+#welcomeScreen[hidden] { display:none !important; }
+.welcome-glow { position:absolute; width:55%; height:50%; top:10%; left:22%; border-radius:50%;
+    background:#8c4bd1; filter:blur(75px); opacity:.18; pointer-events:none; }
+.welcome-art { position:relative; z-index:1; width:min(100%,560px); max-height:45%; }
+.welcome-copy { position:relative; z-index:1; text-align:center; margin-top:-4px; }
+.welcome-eyebrow { color:#d8b5fa; font-size:12px; font-weight:800; letter-spacing:4px; }
+.welcome-eyebrow span { display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:#b879f2; box-shadow:0 0 12px #bd82f5; margin-right:8px; }
+.welcome-title { color:#fff; font-size:clamp(23px,3vw,38px); line-height:1.12;
+    font-weight:900; letter-spacing:-.8px; margin-top:9px; }
+.welcome-title em { color:#c99af5; font-style:normal; }
+.welcome-hint { color:#c6b1d9; font-size:14px; margin-top:9px; }
+.welcome-guide { position:relative; z-index:1; display:flex; justify-content:center;
+    flex-wrap:wrap; gap:9px; width:100%; margin-top:20px; }
+.guide-item { display:flex; align-items:center; gap:8px; min-width:118px; padding:9px 11px;
+    border:1px solid rgba(189,139,232,.25); border-radius:10px;
+    background:rgba(55,34,77,.7); color:#d9c6e9; font-size:11px; line-height:1.25; }
+.guide-item b { display:flex; align-items:center; justify-content:center; min-width:29px;
+    height:29px; border-radius:7px; background:#694092; color:white; font-size:13px; }
 #video {
     width: 100%;
     flex: 1;
@@ -684,6 +710,47 @@ body.tv-mode.tv-video-fullscreen { overflow:hidden !important; }
             <a id="androidDownload" class="android-download" href="https://github.com/bladeblack88/Iptv/releases/download/apk-latest/app-debug.apk" style="display:none">⬇ Скачать APK</a>
             <div class="brandlive"><i></i> LIVE</div>
         </div>
+
+        <!-- Экран приветствия показывается, пока канал не выбран -->
+        <section id="welcomeScreen" aria-label="Как пользоваться IPTV">
+            <div class="welcome-glow"></div>
+            <svg class="welcome-art" viewBox="0 0 720 330" role="img" aria-label="Телевизор с эфиром">
+                <defs>
+                    <linearGradient id="screenGlow" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#9d5be8"/>
+                        <stop offset="1" stop-color="#39205e"/>
+                    </linearGradient>
+                    <linearGradient id="screenShine" x1="0" y1="0" x2="0.9" y2="1">
+                        <stop offset="0" stop-color="#dcbaff" stop-opacity=".55"/>
+                        <stop offset="1" stop-color="#7b43bd" stop-opacity=".05"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="360" cy="145" r="132" fill="#9a5be8" opacity=".09"/>
+                <rect x="174" y="42" width="372" height="218" rx="25" fill="#10091b" stroke="#9860c9" stroke-width="7"/>
+                <rect x="188" y="56" width="344" height="190" rx="16" fill="url(#screenGlow)"/>
+                <path d="M188 185 Q285 95 365 165 T532 115 V246 H188Z" fill="#27133e" opacity=".72"/>
+                <path d="M188 208 Q300 145 390 194 T532 168 V246 H188Z" fill="#5e328c" opacity=".78"/>
+                <path d="M188 56 H532 V145 Q380 195 188 112Z" fill="url(#screenShine)"/>
+                <circle cx="472" cy="100" r="18" fill="#f2d8ff" opacity=".9"/>
+                <path d="M347 112 L347 190 L414 151Z" fill="#fff" opacity=".95"/>
+                <path d="M268 262 L250 290 M452 262 L470 290" stroke="#a979d6" stroke-width="9" stroke-linecap="round"/>
+                <path d="M232 292 H488" stroke="#a979d6" stroke-width="9" stroke-linecap="round"/>
+                <circle cx="516" cy="224" r="4" fill="#e4c5ff"/>
+                <path d="M132 100 l-24 -18 M588 100 l24 -18 M128 205 l-30 8 M592 205 l30 8" stroke="#b77aee" stroke-width="5" stroke-linecap="round" opacity=".65"/>
+                <path d="M130 146 l-12 0 M602 146 l-12 0" stroke="#e0bfff" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+            <div class="welcome-copy">
+                <div class="welcome-eyebrow"><span></span> IPTV РОССИЯ</div>
+                <div class="welcome-title">Ваше телевидение<br/><em>начинается здесь</em></div>
+                <div class="welcome-hint">Выберите канал в списке справа</div>
+            </div>
+            <div class="welcome-guide">
+                <div class="guide-item"><b>↑ ↓</b><span>Перемещение<br/>по каналам</span></div>
+                <div class="guide-item"><b>OK</b><span>Включить<br/>канал</span></div>
+                <div class="guide-item"><b>♥</b><span>Двойное OK<br/>в избранное</span></div>
+                <div class="guide-item"><b>←</b><span>Вернуться<br/>к списку</span></div>
+            </div>
+        </section>
 
         <!-- Видеоплеер со стандартным управлением -->
 
@@ -1435,6 +1502,7 @@ function playChannel(index) {
     activeIndex = index;
     var channel = channels[index];
     activeUrl = channel.url;
+    document.getElementById("welcomeScreen").hidden = true;
     document.getElementById("status").textContent = "Загрузка канала: " + channel.name;
 
     // Для UNIVER TV используем официальный веб-плеер КФУ внутри IPTV.
@@ -1576,6 +1644,7 @@ function stopPlayer() {
     video.load();
 
     activeUrl = null;
+    document.getElementById("welcomeScreen").hidden = false;
 
 }
 
