@@ -413,8 +413,6 @@ button:disabled { opacity:.35; }
         background: #000;
     }
     .brandbar, #now, #status { display: none !important; }
-    #playlistTools { display:flex !important; flex:0 0 auto; flex-wrap:wrap; gap:4px; padding:5px; background:#121321; border-bottom:1px solid rgba(177,143,255,.16); }
-    #playlistTools button { flex:1 1 44%; min-width:0; padding:7px 4px; font-size:9px; white-space:normal; }
     #video {
         display: block;
         width: 100%;
@@ -662,13 +660,6 @@ body.ios-simulated-fullscreen {
                 <div class="library-subtitle" id="librarySubtitle">Все каналы</div>
             </div>
             <button id="favoriteFilterButton" type="button" onclick="toggleChannelFilter()">Избранные</button>
-        </div>
-
-        <div class="controls" id="playlistTools">
-            <button id="checkButton" type="button" onclick="startAutoCheck()">Проверить потоки</button>
-            <button id="stopCheckButton" type="button" onclick="stopAutoCheck()" disabled>Стоп</button>
-            <button id="removeButton" type="button" onclick="removeFailedChannels()">Удалить ошибки</button>
-            <button id="restoreButton" type="button" onclick="restoreExcluded()">Вернуть удалённые</button>
         </div>
 
         <div id="channelList"></div>
