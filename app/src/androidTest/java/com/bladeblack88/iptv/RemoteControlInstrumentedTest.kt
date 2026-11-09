@@ -6,6 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.KeyEvent
 import android.webkit.WebView
+import androidx.test.uiautomator.UiDevice
+import org.junit.Rule
+import org.junit.rules.TestName
+import java.io.File
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
@@ -23,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference
 @RunWith(AndroidJUnit4::class)
 class RemoteControlInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    @Rule @JvmField val testName = TestName()
     private var activity: MainActivity? = null
     private var webView: WebView? = null
 
@@ -62,6 +67,7 @@ class RemoteControlInstrumentedTest {
             )
         }
         waitForPage()
+        captureScreenshot("initial")
     }
 
     @After
@@ -110,6 +116,12 @@ class RemoteControlInstrumentedTest {
         assertTrue("Local test page or Android bridge did not become ready", ready)
     }
 
+    private fun captureScreenshot(stage: String) {
+        val safeName = testName.methodName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val file = File("/sdcard/iptv-${safeName}-${stage}.png")
+        assertTrue("Could not capture emulator screenshot: $file", UiDevice.getInstance(instrumentation).takeScreenshot(file))
+    }
+
     private fun press(keyCode: Int) {
         instrumentation.runOnMainSync { webView?.requestFocus() }
         instrumentation.sendKeyDownUpSync(keyCode)
@@ -137,6 +149,7 @@ class RemoteControlInstrumentedTest {
             Array.from(document.querySelectorAll('#channelList .channel'))
               .findIndex(function(el) { return el.classList.contains('tv-focused'); })
         """.trimIndent()))
+        captureScreenshot("after-dpad-down")
     }
 
     @Test
@@ -146,6 +159,7 @@ class RemoteControlInstrumentedTest {
         assertEquals("0", evaluate("activeIndex"))
         press(KeyEvent.KEYCODE_DPAD_CENTER)
         assertEquals("true", evaluate("document.body.classList.contains('tv-video-fullscreen').toString()"))
+        captureScreenshot("fullscreen")
     }
 
     @Test
@@ -153,6 +167,7 @@ class RemoteControlInstrumentedTest {
         evaluate("document.querySelector('#channelList .channel').focus()")
         press(KeyEvent.KEYCODE_DPAD_CENTER)
         assertEquals("0", evaluate("favoriteToggleCount"))
+        captureScreenshot("after-ok")
     }
 
     private val testPage = """
