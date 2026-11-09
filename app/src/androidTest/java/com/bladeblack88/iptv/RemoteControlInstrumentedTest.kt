@@ -95,4 +95,51 @@ class RemoteControlInstrumentedTest {
         """.trimIndent()).trim('"').toIntOrNull() ?: -1
         assertTrue("DPAD_DOWN did not move focus to another list item (index=$focusedIndex)", focusedIndex > 0)
     }
+
+    @Test
+    fun pressingOkTwiceOnSelectedChannelRequestsFullscreen() {
+        val webView = findWebView(activityRule.activity.window.decorView)
+            ?: throw AssertionError("WebView was not created")
+        waitForPage(webView)
+
+        val prepared = evaluate(webView, """
+            (function() {
+              var row = Array.from(document.querySelectorAll('#channelList .channel'))
+                .find(function(el) { return !el.classList.contains('channel-filter-entry'); });
+              if (!row) return false;
+              document.querySelectorAll('#channelList .channel').forEach(function(el) {
+                el.classList.remove('tv-focused');
+              });
+              row.classList.add('tv-focused');
+              row.focus();
+              return true;
+            })()
+        """.trimIndent())
+        assertEquals("true", prepared)
+
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_CENTER)
+
+        val selected = System.currentTimeMillis() + 20_000
+        var playing = false
+        while (System.currentTimeMillis() < selected && !playing) {
+            playing = evaluate(webView,
+                "typeof activeIndex === 'number' && activeIndex >= 0").trim() == "true"
+            if (!playing) Thread.sleep(300)
+        }
+        assertTrue("First OK did not select/start a channel", playing)
+
+        instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_CENTER)
+        val fullscreenDeadline = System.currentTimeMillis() + 15_000
+        var fullscreen = false
+        while (System.currentTimeMillis() < fullscreenDeadline && !fullscreen) {
+            fullscreen = InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val parent = webView.parent as? ViewGroup
+                parent != null && parent.childCount > 1
+            } == Unit && evaluate(webView, "!!document.fullscreenElement").trim() == "true"
+            if (!fullscreen) Thread.sleep(300)
+        }
+        assertTrue("Second OK did not enter fullscreen", fullscreen)
+    }
+
 }
