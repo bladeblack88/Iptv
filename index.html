@@ -730,37 +730,13 @@ window.addEventListener(
     }
 );
 
+// Не закрываем полноэкранное видео при повороте экрана или событиях Safari.
+// Старый iOS Safari самостоятельно управляет полноэкранным режимом видео.
 function keepLandscapeLayout() {
-    if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches) {
-        var fullscreenElement =
-            document.fullscreenElement ||
-            document.webkitFullscreenElement;
-
-        // Не закрываем полноэкранный интерфейс #app при смене ориентации.
-        if (fullscreenElement && fullscreenElement !== app) {
-            var exitFullscreen =
-                document.exitFullscreen ||
-                document.webkitExitFullscreen;
-            if (exitFullscreen) {
-                var result = exitFullscreen.call(document);
-                if (result && result.catch) result.catch(function() {});
-            }
-        }
-
-        if (video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
-            video.webkitExitFullscreen();
-        }
-    }
+    // Оставлено для совместимости с существующими вызовами при смене ориентации.
 }
 
 window.addEventListener("resize", keepLandscapeLayout);
-document.addEventListener("fullscreenchange", keepLandscapeLayout);
-video.addEventListener("webkitbeginfullscreen", function() {
-    if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches &&
-        video.webkitExitFullscreen) {
-        video.webkitExitFullscreen();
-    }
-});
 
 
 /* ЗАГРУЗКА СОХРАНЁННЫХ ДАННЫХ */
