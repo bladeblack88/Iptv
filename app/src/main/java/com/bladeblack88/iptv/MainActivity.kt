@@ -29,6 +29,9 @@ class MainActivity : Activity() {
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private val homeUrl = "https://bladeblack88.github.io/Iptv/"
+    companion object {
+        const val EXTRA_TEST_MODE = "com.bladeblack88.iptv.TEST_MODE"
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,7 +109,10 @@ class MainActivity : Activity() {
 
         rootLayout.addView(webView)
         setContentView(rootLayout)
-        if (savedInstanceState == null) {
+        if (intent.getBooleanExtra(EXTRA_TEST_MODE, false)) {
+            // Instrumentation supplies a deterministic local page after the activity starts.
+            // Avoid racing that fixture against the normal hosted-page navigation.
+        } else if (savedInstanceState == null) {
             webView.loadUrl(homeUrl)
         } else {
             webView.restoreState(savedInstanceState)
