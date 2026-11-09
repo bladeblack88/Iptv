@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -24,6 +25,9 @@ class MainActivity : Activity() {
     }
 
     private lateinit var webView: WebView
+    private lateinit var rootLayout: FrameLayout
+    private var customView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private val homeUrl = "https://bladeblack88.github.io/Iptv/"
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -38,6 +42,7 @@ class MainActivity : Activity() {
                 or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         )
 
+        rootLayout = FrameLayout(this)
         webView = WebView(this)
         webView.layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -54,13 +59,51 @@ class MainActivity : Activity() {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
-        webView.webChromeClient = WebChromeClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            // Android WebView requires a native custom view for HTML5 video fullscreen.
+            // Without this callback, requestFullscreen() can leave the video surface black.
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                if (customView != null) {
+                    callback.onCustomViewHidden()
+                    return
+                }
+                customView = view
+                customViewCallback = callback
+                view.setBackgroundColor(android.graphics.Color.BLACK)
+                rootLayout.addView(
+                    view,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+                )
+                view.requestFocus()
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                )
+            }
+
+            override fun onHideCustomView() {
+                val view = customView ?: return
+                rootLayout.removeView(view)
+                customView = null
+                customViewCallback?.onCustomViewHidden()
+                customViewCallback = null
+                webView.requestFocus()
+            }
+        }
         // Keep navigation inside WebView so embedded players and stream pages load in-app.
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
         }
 
-        setContentView(webView)
+        rootLayout.addView(webView)
+        setContentView(rootLayout)
         if (savedInstanceState == null) {
             webView.loadUrl(homeUrl)
         } else {
@@ -75,6 +118,10 @@ class MainActivity : Activity() {
 
     @Deprecated("Deprecated in Android")
     override fun onBackPressed() {
+        if (customView != null) {
+            (webView.webChromeClient as? WebChromeClient)?.onHideCustomView()
+            return
+        }
         if (::webView.isInitialized && webView.canGoBack()) {
             webView.goBack()
         } else {
