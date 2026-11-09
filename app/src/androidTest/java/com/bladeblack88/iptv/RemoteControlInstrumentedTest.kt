@@ -152,12 +152,7 @@ class RemoteControlInstrumentedTest {
               return document.activeElement === document.body;
             })()
         """.trimIndent()))
-        instrumentation.runOnMainSync {
-            val view = webView ?: throw AssertionError("WebView unavailable")
-            view.requestFocus()
-            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT))
-            view.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_RIGHT))
-        }
+        press(KeyEvent.KEYCODE_DPAD_RIGHT)
         assertEquals("0", evaluate("favoriteToggleCount"))
         assertEquals("0", evaluate("""
             Array.from(document.querySelectorAll('#channelList .channel'))
