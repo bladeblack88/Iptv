@@ -16,6 +16,14 @@ REPEAT_CHECKS = 2
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
 EXTRA_CHANNELS = [
     (
+        ['#EXTINF:-1 tvg-id="TNT.ru@HD" group-title="Entertainment",ТНТ HD (1080p)'],
+        "http://45.153.24.78/TNT/index.m3u8",
+    ),
+    (
+        ['#EXTINF:-1 tvg-id="STS.ru@HD" group-title="Entertainment",СТС HD (1080p)'],
+        "http://stream.mcquack.net/138/index.m3u8",
+    ),
+    (
         ['#EXTINF:-1 tvg-id="Peretz.ru@SD" group-title="Entertainment",Перец'],
         "https://zabava-htlive.cdn.ngenix.net/hls/CH_PERETZ/variant.m3u8",
     ),
@@ -180,14 +188,17 @@ def main():
     # Keep source ordering, but only output the fastest verified URL per title.
     selected = {id(entry) for entry in working}
     lines = ["#EXTM3U"]
-    ordered_entries = sorted(
-        entries,
-        key=lambda entry: 0 if re.search(
-            r"перец|peretz",
-            next((line for line in entry[0] if line.startswith("#EXTINF:")), ""),
-            flags=re.I,
-        ) else 1,
-    )
+    def playlist_order(entry):
+        extinf = next((line for line in entry[0] if line.startswith("#EXTINF:")), "")
+        if re.search(r"перец|peretz", extinf, flags=re.I):
+            return 0
+        if re.search(r"тнт|\\btnt\\b", extinf, flags=re.I):
+            return 1
+        if re.search(r"стс|\\bsts\\b", extinf, flags=re.I):
+            return 2
+        return 3
+
+    ordered_entries = sorted(entries, key=playlist_order)
     for entry in ordered_entries:
         if id(entry) in selected:
             metadata, url = entry
