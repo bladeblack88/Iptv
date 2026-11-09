@@ -5,6 +5,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -12,6 +13,13 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 
 class MainActivity : Activity() {
+    // Exposes a small, read-only marker so the website can distinguish the APK WebView
+    // from a regular Android browser and hide its own APK download link.
+    class AppBridge {
+        @JavascriptInterface
+        fun isNativeApp(): Boolean = true
+    }
+
     private lateinit var webView: WebView
     private val homeUrl = "https://bladeblack88.github.io/Iptv/"
 
@@ -33,6 +41,7 @@ class MainActivity : Activity() {
             FrameLayout.LayoutParams.MATCH_PARENT
         )
         webView.settings.javaScriptEnabled = true
+        webView.addJavascriptInterface(AppBridge(), "AndroidApp")
         webView.settings.domStorageEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.loadsImagesAutomatically = true
