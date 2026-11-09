@@ -1,14 +1,19 @@
 package com.bladeblack88.iptv
 
+import android.app.Activity
+import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
+import android.view.KeyEvent
 import android.webkit.WebView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.ActivityTestRule
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Rule
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
@@ -17,8 +22,56 @@ import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class RemoteControlInstrumentedTest {
-    @get:Rule
-    val activityRule = ActivityTestRule(MainActivity::class.java)
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private var activity: MainActivity? = null
+    private var webView: WebView? = null
+
+    // Launch asynchronously: startActivitySync waits for the main queue to become idle,
+    // which is unreliable for a WebView loading a live IPTV page.
+    @Before
+    fun launchApp() {
+        val context = instrumentation.targetContext
+        context.startActivity(
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        )
+
+        val deadline = System.currentTimeMillis() + 30_000
+        while (System.currentTimeMillis() < deadline && activity == null) {
+            instrumentation.runOnMainSync {
+                activity = ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED)
+                    .filterIsInstance<MainActivity>()
+                    .firstOrNull()
+            }
+            if (activity == null) Thread.sleep(100)
+        }
+        assertTrue("MainActivity did not reach RESUMED", activity != null)
+
+        instrumentation.runOnMainSync {
+            webView = findWebView(activity!!.window.decorView)
+            assertTrue("WebView was not created", webView != null)
+            // Use a deterministic local page so tests exercise the APK's real key handler
+            // without depending on GitHub Pages, playlist downloads, or stream availability.
+            webView!!.loadDataWithBaseURL(
+                "https://bladeblack88.github.io/Iptv/",
+                testPage,
+                "text/html",
+                "UTF-8",
+                null
+            )
+        }
+        waitForPage()
+    }
+
+    @After
+    fun closeApp() {
+        instrumentation.runOnMainSync {
+            activity?.finish()
+            activity = null
+            webView = null
+        }
+    }
 
     private fun findWebView(view: View): WebView? {
         if (view is WebView) return view
@@ -31,118 +84,96 @@ class RemoteControlInstrumentedTest {
         return null
     }
 
-    private fun evaluate(webView: WebView, script: String): String {
-        val result = AtomicReference<String>()
+    private fun evaluate(script: String): String {
+        val view = webView ?: throw AssertionError("WebView unavailable")
+        val result = AtomicReference<String?>()
         val latch = CountDownLatch(1)
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            webView.evaluateJavascript(script) {
+        instrumentation.runOnMainSync {
+            view.evaluateJavascript(script) {
                 result.set(it)
                 latch.countDown()
             }
         }
-        assertTrue("JavaScript evaluation timed out", latch.await(10, TimeUnit.SECONDS))
+        assertTrue("JavaScript evaluation timed out", latch.await(15, TimeUnit.SECONDS))
         return result.get() ?: "null"
     }
 
-    private fun waitForPage(webView: WebView) {
-        val deadline = System.currentTimeMillis() + 60_000
+    private fun waitForPage() {
+        val deadline = System.currentTimeMillis() + 15_000
         var ready = false
         while (System.currentTimeMillis() < deadline && !ready) {
-            val state = evaluate(
-                webView,
+            ready = evaluate(
                 "!!(window.AndroidApp && AndroidApp.isNativeApp() && document.querySelector('#channelList .channel'))"
-            )
-            ready = state == "true"
-            if (!ready) Thread.sleep(500)
+            ) == "true"
+            if (!ready) Thread.sleep(100)
         }
-        assertTrue("IPTV page or Android bridge did not become ready", ready)
+        assertTrue("Local test page or Android bridge did not become ready", ready)
+    }
+
+    private fun press(keyCode: Int) {
+        instrumentation.runOnMainSync { webView?.requestFocus() }
+        instrumentation.sendKeyDownUpSync(keyCode)
     }
 
     @Test
-    fun appLoadsIptvPageAndNativeBridge() {
-        val webView = findWebView(activityRule.activity.window.decorView)
-            ?: throw AssertionError("WebView was not created")
-        waitForPage(webView)
-        assertEquals("true", evaluate(webView, "AndroidApp.isNativeApp()"))
-        assertEquals("true", evaluate(webView, "document.querySelectorAll('#channelList .channel').length > 0"))
+    fun appLoadsWebViewAndNativeBridge() {
+        assertEquals("true", evaluate("AndroidApp.isNativeApp()"))
+        assertEquals("true", evaluate("AndroidApp.isAndroidTv() === true || AndroidApp.isAndroidTv() === false"))
+        assertEquals("2", evaluate("document.querySelectorAll('#channelList .channel').length.toString()"))
     }
 
     @Test
     fun dpadDownMovesFocusToNextChannel() {
-        val webView = findWebView(activityRule.activity.window.decorView)
-            ?: throw AssertionError("WebView was not created")
-        waitForPage(webView)
-
-        val prepared = evaluate(webView, """
+        assertEquals("true", evaluate("""
             (function() {
-              var rows = Array.from(document.querySelectorAll('#channelList .channel'))
-                .filter(function(el) { return !el.classList.contains('channel-filter-entry'); });
-              if (rows.length < 2) return false;
-              rows.forEach(function(el) { el.classList.remove('tv-focused'); });
+              var rows = document.querySelectorAll('#channelList .channel');
               rows[0].classList.add('tv-focused');
               rows[0].focus();
-              return true;
+              return document.activeElement === rows[0];
             })()
-        """.trimIndent())
-        assertEquals("true", prepared)
-
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_DOWN)
-        val focusedIndex = evaluate(webView, """
-            (function() {
-              var rows = Array.from(document.querySelectorAll('#channelList .channel'));
-              return rows.findIndex(function(el) { return el.classList.contains('tv-focused'); });
-            })()
-        """.trimIndent()).trim('"').toIntOrNull() ?: -1
-        assertTrue("DPAD_DOWN did not move focus to another list item (index=$focusedIndex)", focusedIndex > 0)
+        """.trimIndent()))
+        press(KeyEvent.KEYCODE_DPAD_DOWN)
+        assertEquals("1", evaluate("""
+            Array.from(document.querySelectorAll('#channelList .channel'))
+              .findIndex(function(el) { return el.classList.contains('tv-focused'); }).toString()
+        """.trimIndent()))
     }
 
     @Test
-    fun pressingOkTwiceOnSelectedChannelRequestsFullscreen() {
-        val webView = findWebView(activityRule.activity.window.decorView)
-            ?: throw AssertionError("WebView was not created")
-        waitForPage(webView)
-
-        val prepared = evaluate(webView, """
-            (function() {
-              var row = Array.from(document.querySelectorAll('#channelList .channel'))
-                .find(function(el) { return !el.classList.contains('channel-filter-entry'); });
-              if (!row) return false;
-              document.querySelectorAll('#channelList .channel').forEach(function(el) {
-                el.classList.remove('tv-focused');
-              });
-              row.classList.add('tv-focused');
-              row.focus();
-              return true;
-            })()
-        """.trimIndent())
-        assertEquals("true", prepared)
-
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_CENTER)
-
-        val selected = System.currentTimeMillis() + 20_000
-        var playing = false
-        while (System.currentTimeMillis() < selected && !playing) {
-            playing = evaluate(webView,
-                "typeof activeIndex === 'number' && activeIndex >= 0").trim() == "true"
-            if (!playing) Thread.sleep(300)
-        }
-        assertTrue("First OK did not select/start a channel", playing)
-
-        instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_CENTER)
-        val fullscreenDeadline = System.currentTimeMillis() + 15_000
-        var fullscreen = false
-        while (System.currentTimeMillis() < fullscreenDeadline && !fullscreen) {
-            val nativeFullscreen = AtomicReference(false)
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                val parent = webView.parent as? ViewGroup
-                nativeFullscreen.set(parent != null && parent.childCount > 1)
-            }
-            fullscreen = nativeFullscreen.get() ||
-                evaluate(webView, "!!(document.fullscreenElement || (document.getElementById('video') && document.getElementById('video').webkitDisplayingFullscreen))").trim() == "true"
-            if (!fullscreen) Thread.sleep(300)
-        }
-        assertTrue("Second OK did not enter fullscreen", fullscreen)
+    fun pressingOkTwiceOnSameChannelRequestsFullscreen() {
+        evaluate("document.querySelector('#channelList .channel').focus()")
+        press(KeyEvent.KEYCODE_DPAD_CENTER)
+        assertEquals("0", evaluate("activeIndex.toString()"))
+        press(KeyEvent.KEYCODE_DPAD_CENTER)
+        assertEquals("true", evaluate("document.body.classList.contains('tv-video-fullscreen').toString()"))
     }
 
+    @Test
+    fun okDoesNotAccidentallyToggleFavorite() {
+        evaluate("document.querySelector('#channelList .channel').focus()")
+        press(KeyEvent.KEYCODE_DPAD_CENTER)
+        assertEquals("0", evaluate("favoriteToggleCount.toString()"))
+    }
+
+    private val testPage = """
+        <!doctype html>
+        <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { background:#111; color:white; }
+          .channel { display:block; padding:24px; margin:8px; background:#333; }
+          .tv-focused { outline:4px solid yellow; }
+        </style></head><body>
+        <div id="channelList">
+          <div class="channel" data-index="0" tabindex="0">Test channel one</div>
+          <div class="channel" data-index="1" tabindex="0">Test channel two</div>
+        </div>
+        <script>
+          var channels = [{url:'https://example.test/one'}, {url:'https://example.test/two'}];
+          var activeIndex = -1;
+          var favoriteToggleCount = 0;
+          function playChannel(index) { activeIndex = index; }
+          function enterTvFullscreen() { document.body.classList.add('tv-video-fullscreen'); }
+          function toggleFavoriteByIndex() { favoriteToggleCount++; }
+        </script></body></html>
+    """.trimIndent()
 }
