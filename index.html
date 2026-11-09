@@ -642,6 +642,36 @@ var hlsPlayer = null;
 var video = document.getElementById("video");
 var app = document.getElementById("app");
 
+// iOS Safari при закрытии нативного fullscreen иногда оставляет video на паузе.
+// Запоминаем состояние до входа и возобновляем тот же поток после выхода.
+var resumeAfterVideoFullscreen = false;
+
+video.addEventListener("webkitbeginfullscreen", function() {
+    resumeAfterVideoFullscreen = !video.paused && !!activeUrl;
+});
+
+video.addEventListener("webkitendfullscreen", function() {
+    if (!resumeAfterVideoFullscreen || !activeUrl) {
+        resumeAfterVideoFullscreen = false;
+        return;
+    }
+
+    resumeAfterVideoFullscreen = false;
+
+    // Даём Safari завершить переход обратно во встроенный режим.
+    setTimeout(function() {
+        if (!activeUrl || !video.paused) return;
+
+        var playResult = video.play();
+        if (playResult && playResult.catch) {
+            playResult.catch(function() {
+                document.getElementById("status").textContent =
+                    "Нажмите ▶ на видео, чтобы продолжить просмотр";
+            });
+        }
+    }, 180);
+});
+
 
 /* ПОЛНОЭКРАННЫЙ РЕЖИМ */
 
