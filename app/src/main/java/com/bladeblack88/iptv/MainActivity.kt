@@ -113,15 +113,15 @@ class MainActivity : Activity() {
         if (intent.getBooleanExtra(EXTRA_TEST_MODE, false)) {
             // Instrumentation supplies a deterministic local page after the activity starts.
             // Avoid racing that fixture against the normal hosted-page navigation.
-        } else if (savedInstanceState == null) {
-            webView.loadUrl(homeUrl)
         } else {
-            webView.restoreState(savedInstanceState)
+            // Always start a new app session at home, never restore stale WebView history.
+            webView.clearHistory()
+            webView.loadUrl(homeUrl)
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        webView.saveState(outState)
+        // Do not persist WebView navigation state; a recreated Activity starts at home.
         super.onSaveInstanceState(outState)
     }
 
@@ -391,11 +391,9 @@ class MainActivity : Activity() {
             hideCustomView()
             return
         }
-        if (::webView.isInitialized && webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
-        }
+        // Back exits the app instead of walking through WebView/player history.
+        // The next launch always opens the home screen from onCreate().
+        finish()
     }
 
     override fun onDestroy() {
