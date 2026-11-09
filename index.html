@@ -1154,7 +1154,7 @@ function renderChannels() {
             var index = parseInt(channelItem.getAttribute("data-index"), 10);
             var now = Date.now();
 
-            if (channelItem._tapTimer && now - channelItem._lastTap < 350) {
+            if (channelItem._tapTimer && now - channelItem._lastTap < 420) {
                 clearTimeout(channelItem._tapTimer);
                 channelItem._tapTimer = null;
                 channelItem._lastTap = 0;
@@ -1166,15 +1166,7 @@ function renderChannels() {
             channelItem._tapTimer = setTimeout(function() {
                 channelItem._tapTimer = null;
                 playChannel(index);
-            }, 260);
-        };
-
-        item.ondblclick = function(event) {
-            if (event) event.preventDefault();
-            if (this._tapTimer) clearTimeout(this._tapTimer);
-            this._tapTimer = null;
-            this._lastTap = 0;
-            toggleFavoriteByIndex(parseInt(this.getAttribute("data-index"), 10));
+            }, 450);
         };
 
         list.appendChild(item);
