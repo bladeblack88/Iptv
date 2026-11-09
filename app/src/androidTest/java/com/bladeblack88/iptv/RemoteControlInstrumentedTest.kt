@@ -119,7 +119,7 @@ class RemoteControlInstrumentedTest {
     fun appLoadsWebViewAndNativeBridge() {
         assertEquals("true", evaluate("AndroidApp.isNativeApp()"))
         assertEquals("true", evaluate("AndroidApp.isAndroidTv() === true || AndroidApp.isAndroidTv() === false"))
-        assertEquals("2", evaluate("document.querySelectorAll('#channelList .channel').length.toString()"))
+        assertEquals("2", evaluate("document.querySelectorAll('#channelList .channel').length"))
     }
 
     @Test
@@ -135,7 +135,7 @@ class RemoteControlInstrumentedTest {
         press(KeyEvent.KEYCODE_DPAD_DOWN)
         assertEquals("1", evaluate("""
             Array.from(document.querySelectorAll('#channelList .channel'))
-              .findIndex(function(el) { return el.classList.contains('tv-focused'); }).toString()
+              .findIndex(function(el) { return el.classList.contains('tv-focused'); })
         """.trimIndent()))
     }
 
@@ -143,7 +143,7 @@ class RemoteControlInstrumentedTest {
     fun pressingOkTwiceOnSameChannelRequestsFullscreen() {
         evaluate("document.querySelector('#channelList .channel').focus()")
         press(KeyEvent.KEYCODE_DPAD_CENTER)
-        assertEquals("0", evaluate("activeIndex.toString()"))
+        assertEquals("0", evaluate("activeIndex"))
         press(KeyEvent.KEYCODE_DPAD_CENTER)
         assertEquals("true", evaluate("document.body.classList.contains('tv-video-fullscreen').toString()"))
     }
@@ -152,7 +152,7 @@ class RemoteControlInstrumentedTest {
     fun okDoesNotAccidentallyToggleFavorite() {
         evaluate("document.querySelector('#channelList .channel').focus()")
         press(KeyEvent.KEYCODE_DPAD_CENTER)
-        assertEquals("0", evaluate("favoriteToggleCount.toString()"))
+        assertEquals("0", evaluate("favoriteToggleCount"))
     }
 
     private val testPage = """
