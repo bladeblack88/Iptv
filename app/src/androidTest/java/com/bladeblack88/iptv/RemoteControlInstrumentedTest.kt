@@ -103,7 +103,7 @@ class RemoteControlInstrumentedTest {
         var ready = false
         while (System.currentTimeMillis() < deadline && !ready) {
             ready = evaluate(
-                "!!(window.AndroidApp && AndroidApp.isNativeApp() && document.querySelector('#channelList .channel'))"
+                "!!(window.AndroidApp && AndroidApp.isNativeApp() && window.__apkRemoteControlsInstalled === true && document.querySelector('#channelList .channel'))"
             ) == "true"
             if (!ready) Thread.sleep(100)
         }
