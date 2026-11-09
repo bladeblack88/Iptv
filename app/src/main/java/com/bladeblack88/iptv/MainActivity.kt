@@ -300,7 +300,27 @@ class MainActivity : Activity() {
                     }
                     if (key === 'ArrowRight' || code === 22) {
                         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-                        if (!e.repeat) toggleFavorite();
+                        if (e.repeat) return;
+                        var active = document.activeElement;
+                        var inList = active && active.classList && active.classList.contains('channel') &&
+                            document.getElementById('channelList') &&
+                            document.getElementById('channelList').contains(active);
+                        var all = items();
+                        if (!inList) {
+                            // Moving right from the video/player enters the channel list.
+                            // This navigation must never change a channel's favorite state.
+                            var firstChannel = all.findIndex(function(el) {
+                                return !el.classList.contains('channel-filter-entry');
+                            });
+                            focusAt(firstChannel >= 0 ? firstChannel : 0);
+                        } else if (active.classList.contains('channel-filter-entry')) {
+                            var nextChannel = all.findIndex(function(el) {
+                                return !el.classList.contains('channel-filter-entry');
+                            });
+                            if (nextChannel >= 0) focusAt(nextChannel);
+                        } else {
+                            toggleFavorite();
+                        }
                         return;
                     }
                     if (key === 'Enter' || key === ' ' || code === 23 || code === 66) {
