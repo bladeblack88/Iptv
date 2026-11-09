@@ -755,6 +755,7 @@ body.tv-mode .channelFavoriteHeart { top:5px; right:7px; font-size:12px; }
             id="video"
             tabindex="0"
             controls
+            preload="auto"
             controlslist="nofullscreen noremoteplayback"
             playsinline
             webkit-playsinline
@@ -1590,7 +1591,7 @@ function playChannel(index) {
     } else if (isTransportStream && window.mpegts && mpegts.isSupported()) {
         try {
             mpegtsPlayer = mpegts.createPlayer({type:"mpegts", url:url, isLive:true, cors:true, withCredentials:false}, {
-                enableWorker:true, enableStashBuffer:true, stashInitialSize:1048576, liveBufferLatencyChasing:true
+                enableWorker:true, enableStashBuffer:true, stashInitialSize:8388608, liveBufferLatencyChasing:true
             });
             mpegtsPlayer.attachMediaElement(video);
             mpegtsPlayer.load();
@@ -1608,8 +1609,8 @@ function playChannel(index) {
     } else if ((isHls || !isDash) && window.Hls && Hls.isSupported()) {
         // Некоторые IPTV-серверы скрывают .m3u8 в URL, поэтому проверяем и адреса без расширения.
         hlsPlayer = new Hls({
-            enableWorker:true, lowLatencyMode:false, backBufferLength:60,
-            maxBufferLength:90, maxMaxBufferLength:180, maxBufferSize:104857600,
+            enableWorker:true, lowLatencyMode:false, backBufferLength:120,
+            maxBufferLength:300, maxMaxBufferLength:600, maxBufferSize:268435456,
             maxBufferHole:0.5, manifestLoadingMaxRetry:6, levelLoadingMaxRetry:6,
             fragLoadingMaxRetry:8, manifestLoadingRetryDelay:1000,
             levelLoadingRetryDelay:1000, fragLoadingRetryDelay:1000,
