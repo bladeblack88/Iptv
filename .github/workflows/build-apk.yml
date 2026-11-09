@@ -21,10 +21,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Use the exact website home-screen icon
+      - name: Use the dedicated Google TV launcher icon
         run: |
           mkdir -p app/src/main/res/mipmap-nodpi
-          curl -fsSL "https://raw.githubusercontent.com/bladeblack88/Iptv/main/apple-touch-icon.png" -o app/src/main/res/mipmap-nodpi/ic_launcher.png
+          cp app/src/main/res/drawable/ic_launcher.xml app/src/main/res/mipmap-nodpi/ic_launcher.xml
 
       - name: Set up Java
         uses: actions/setup-java@v4
