@@ -255,7 +255,7 @@ class MainActivity : Activity() {
                     if (list) list.scrollTop = top;
                     save();
                 }
-                document.addEventListener('keydown', function(e) {
+                window.addEventListener('keydown', function(e) {
                     var key = e.key || '', code = e.keyCode;
                     if (key === 'ArrowUp' || code === 19) {
                         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
