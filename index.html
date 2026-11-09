@@ -1779,6 +1779,11 @@ function stopAutoCheck() {
 
     }
 
+    if (checkHls) {
+        checkHls.destroy();
+        checkHls = null;
+    }
+
     if (checkVideo) {
 
         checkVideo.pause();
