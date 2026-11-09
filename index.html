@@ -1378,9 +1378,19 @@ function loadEpg() {
 
 function removeExcludedFromPlaylist() {
 
-    channels = channels.filter(function(channel) {
+    var availableChannels = channels.filter(function(channel) {
         return !isExcluded(channel.url);
     });
+
+    // Не оставляем пустой список из-за устаревших исключений в localStorage.
+    // Если исключения скрыли абсолютно все каналы, сбрасываем их и показываем плейлист.
+    if (channels.length > 0 && availableChannels.length === 0 && excludedChannels.length > 0) {
+        excludedChannels = [];
+        saveExcludedChannels();
+        availableChannels = channels.slice();
+    }
+
+    channels = availableChannels;
 
     // При обновлении плейлиста сохраняем текущий канал по адресу потока,
     // поскольку его индекс в новом списке может измениться.
