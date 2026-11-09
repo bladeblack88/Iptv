@@ -761,6 +761,7 @@ var favorites = [];
 var excludedChannels = [];
 
 var activeIndex = -1;
+var focusedChannelIndex = 0;
 var showOnlyFavorites = false;
 
 var checking = false;
@@ -2135,7 +2136,6 @@ function restoreExcluded() {
 
 /* Навигация пультом: стрелки, OK/Enter, возврат к списку каналов */
 (function enableRemoteNavigation() {
-    var focusedChannelIndex = 0;
     function channelItems() {
         return Array.prototype.slice.call(document.querySelectorAll("#channelList .channel"));
     }
