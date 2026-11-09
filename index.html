@@ -774,6 +774,7 @@ var checkFailed = 0;
 var checkUnverified = 0;
 
 var activeUrl = null;
+var tvFocusedChannelUrl = null;
 var hlsPlayer = null;
 
 var video = document.getElementById("video");
@@ -1282,9 +1283,11 @@ function renderChannels() {
 
     // Сохраняем позицию прокрутки до полной перерисовки списка.
     var savedScrollTop = list.scrollTop;
-    var hadChannelFocus = document.activeElement &&
-        document.activeElement.classList &&
-        document.activeElement.classList.contains("channel");
+    var focusedElement = document.activeElement;
+    if (focusedElement && focusedElement.classList && focusedElement.classList.contains("channel")) {
+        var oldFocusedIndex = parseInt(focusedElement.getAttribute("data-index"), 10);
+        if (channels[oldFocusedIndex]) tvFocusedChannelUrl = channels[oldFocusedIndex].url;
+    }
 
     list.innerHTML = "";
 
@@ -1381,10 +1384,6 @@ function renderChannels() {
         };
 
         list.appendChild(item);
-        if (document.body.classList.contains("tv-mode") && list.children.length === 1) {
-            item.classList.add("tv-focused");
-            item.focus();
-        }
 
     }
 
@@ -1398,17 +1397,28 @@ function renderChannels() {
     if (filterButton) filterButton.textContent = showOnlyFavorites ? "Все каналы" : "Избранные";
     if (subtitle) subtitle.textContent = showOnlyFavorites ? "Избранные каналы" : "Все каналы";
 
-    // Сохраняем прокрутку и удерживаем текущий канал в видимой области.
+    // Восстанавливаем ровно один фокус по URL, а не подсвечиваем первый
+    // элемент вместе с активным каналом после каждой перерисовки.
     list.scrollTop = savedScrollTop;
-    if (document.body.classList.contains("tv-mode") && activeIndex >= 0) {
-        var activeItem = list.querySelector('[data-index="' + activeIndex + '"]');
-        if (activeItem) {
-            var visibleItems = Array.prototype.slice.call(list.querySelectorAll(".channel"));
-            var activePosition = visibleItems.indexOf(activeItem);
-            if (activePosition >= 0) focusedChannelIndex = activePosition;
-            activeItem.classList.add("tv-focused");
-            activeItem.scrollIntoView({block:"nearest"});
-            if (hadChannelFocus || document.activeElement === document.body) activeItem.focus();
+    if (document.body.classList.contains("tv-mode")) {
+        var visibleItems = Array.prototype.slice.call(list.querySelectorAll(".channel"));
+        var focusItem = null;
+        if (tvFocusedChannelUrl) {
+            focusItem = visibleItems.find(function(item) {
+                var idx = parseInt(item.getAttribute("data-index"), 10);
+                return channels[idx] && channels[idx].url === tvFocusedChannelUrl;
+            }) || null;
+        }
+        if (!focusItem && visibleItems.length) focusItem = visibleItems[0];
+        visibleItems.forEach(function(item) { item.classList.remove("tv-focused"); });
+        if (focusItem) {
+            var focusPosition = visibleItems.indexOf(focusItem);
+            focusedChannelIndex = focusPosition;
+            focusItem.classList.add("tv-focused");
+            focusItem.focus();
+            focusItem.scrollIntoView({block:"nearest"});
+            var focusIndex = parseInt(focusItem.getAttribute("data-index"), 10);
+            tvFocusedChannelUrl = channels[focusIndex] ? channels[focusIndex].url : null;
         }
     }
 
@@ -2135,6 +2145,8 @@ function restoreExcluded() {
         focusedChannelIndex = Math.max(0, Math.min(index, items.length - 1));
         items.forEach(function(item) { item.classList.remove("tv-focused"); });
         var target = items[focusedChannelIndex];
+        var targetIndex = parseInt(target.getAttribute("data-index"), 10);
+        tvFocusedChannelUrl = channels[targetIndex] ? channels[targetIndex].url : null;
         target.classList.add("tv-focused");
         target.setAttribute("tabindex", "0");
         target.focus();
@@ -2148,6 +2160,8 @@ function restoreExcluded() {
         var active = document.activeElement;
         var inChannel = active && active.classList && active.classList.contains("channel");
         var inVideo = active === video;
+        var filterButton = document.getElementById("favoriteFilterButton");
+        var inFilter = active === filterButton;
         var tvFullscreen = app.classList.contains("tv-video-fullscreen") ||
             document.fullscreenElement === video || !!video.webkitDisplayingFullscreen;
         if (tvFullscreen && (key === "Backspace" || key === "Escape" || code === 4)) {
@@ -2160,7 +2174,11 @@ function restoreExcluded() {
             exitTvFullscreen();
             return;
         }
-        if (key === "ArrowDown" || code === 20) {
+        if ((key === "ArrowDown" || code === 20) && inFilter) {
+            event.preventDefault(); focusChannel(0);
+        } else if ((key === "ArrowUp" || code === 19) && inChannel && focusedChannelIndex === 0) {
+            event.preventDefault(); filterButton.focus();
+        } else if (key === "ArrowDown" || code === 20) {
             event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex + 1 : 0);
         } else if (key === "ArrowUp" || code === 19) {
             event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex - 1 : Math.max(0, items.length - 1));
@@ -2172,6 +2190,8 @@ function restoreExcluded() {
             else document.getElementById("favoriteFilterButton").focus();
         } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inVideo) {
             event.preventDefault(); toggleFullscreen();
+        } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inFilter) {
+            event.preventDefault(); filterButton.click();
         } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inChannel) {
             event.preventDefault(); active.click();
         } else if ((key === "Backspace" || key === "Escape" || code === 4) && inChannel) {
