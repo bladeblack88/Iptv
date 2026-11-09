@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-SOURCE = "https://iptv-org.github.io/iptv/countries/ru.m3u"
+SOURCE = "https://iptv-org.github.io/iptv/languages/rus.m3u"
 OUTPUT = "working.m3u"
 TIMEOUT = 15
 WORKERS = 16
