@@ -1085,6 +1085,7 @@ function loadPlaylist() {
                 channels = parseM3U(xhr.responseText);
 
                 removeExcludedFromPlaylist();
+                loadEpg();
 
                 document.getElementById("status").textContent =
                     "Загружено каналов: " + channels.length;
@@ -1130,6 +1131,7 @@ function parseM3U(data) {
     var currentName = "";
     var currentGroup = "Другие";
     var currentLogo = "";
+    var currentTvgId = "";
 
     for (var i = 0; i < lines.length; i++) {
 
@@ -1153,6 +1155,8 @@ function parseM3U(data) {
 
             var logoMatch = line.match(/tvg-logo="([^"]*)"/i);
             currentLogo = logoMatch && logoMatch[1] ? logoMatch[1] : "";
+            var tvgIdMatch = line.match(/tvg-id="([^"]*)"/i);
+            currentTvgId = tvgIdMatch && tvgIdMatch[1] ? tvgIdMatch[1] : "";
 
         }
 
@@ -1168,6 +1172,7 @@ function parseM3U(data) {
                     name: currentName || "Без названия",
                     group: currentGroup,
                     logo: currentLogo,
+                    epgId: currentTvgId,
                     url: line,
                     checkStatus: "unverified"
                 });
@@ -1176,6 +1181,7 @@ function parseM3U(data) {
             currentName = "";
             currentGroup = "Другие";
             currentLogo = "";
+            currentTvgId = "";
 
         }
 
@@ -1183,6 +1189,85 @@ function parseM3U(data) {
 
     return result;
 
+}
+
+
+/* ЗАГРУЗКА EPG: XMLTV */
+var epgProgramsById = Object.create(null);
+var epgLoaded = false;
+var EPG_URL = "https://iptvx.one/epg/epg.xml.gz";
+
+function parseXmltvTime(value) {
+    var m = String(value || "").match(/^(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})\\s*([+-]\\d{4}|Z)?/);
+    if (!m) return NaN;
+    var zone = m[7] || "+0000";
+    var iso = m[1]+"-"+m[2]+"-"+m[3]+"T"+m[4]+":"+m[5]+":"+m[6];
+    if (zone === "Z") iso += "Z";
+    else iso += zone.slice(0,3)+":"+zone.slice(3,5);
+    return Date.parse(iso);
+}
+
+function refreshChannelPrograms() {
+    var now = Date.now();
+    channels.forEach(function(channel) {
+        var entries = channel.epgId && epgProgramsById[channel.epgId];
+        channel.currentProgram = "";
+        if (!entries) return;
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].start <= now && entries[i].stop > now) {
+                channel.currentProgram = entries[i].title;
+                break;
+            }
+        }
+    });
+    if (typeof renderChannels === "function") renderChannels();
+}
+
+function loadEpg() {
+    fetch(EPG_URL, {cache:"no-store"})
+        .then(function(response) {
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            return response.arrayBuffer();
+        })
+        .then(function(buffer) {
+            var bytes = new Uint8Array(buffer);
+            var isGzip = bytes.length > 2 && bytes[0] === 31 && bytes[1] === 139;
+            if (!isGzip) return new TextDecoder("utf-8").decode(buffer);
+            if (typeof DecompressionStream === "undefined") throw new Error("gzip не поддерживается");
+            return new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+        })
+        .then(function(xmlText) {
+            var xml = new DOMParser().parseFromString(xmlText, "application/xml");
+            if (xml.querySelector("parsererror")) throw new Error("Некорректный XMLTV");
+            var wanted = Object.create(null);
+            channels.forEach(function(channel) { if (channel.epgId) wanted[channel.epgId] = true; });
+            var programmes = xml.getElementsByTagName("programme");
+            var now = Date.now();
+            for (var i = 0; i < programmes.length; i++) {
+                var node = programmes[i];
+                var id = node.getAttribute("channel");
+                if (!wanted[id]) continue;
+                var start = parseXmltvTime(node.getAttribute("start"));
+                var stop = parseXmltvTime(node.getAttribute("stop"));
+                if (!isFinite(start) || !isFinite(stop) || stop <= now - 3600000 || start > now + 86400000) continue;
+                var titleNode = node.getElementsByTagName("title")[0];
+                var title = titleNode ? (titleNode.textContent || "").trim() : "";
+                if (!title) continue;
+                if (!epgProgramsById[id]) epgProgramsById[id] = [];
+                epgProgramsById[id].push({start:start, stop:stop, title:title});
+            }
+            Object.keys(epgProgramsById).forEach(function(id) {
+                epgProgramsById[id].sort(function(a,b) { return a.start-b.start; });
+            });
+            epgLoaded = true;
+            refreshChannelPrograms();
+        })
+        .catch(function(error) {
+            console.warn("EPG не загружена:", error);
+            epgLoaded = false;
+            channels.forEach(function(channel) { channel.currentProgram = ""; });
+            if (typeof renderChannels === "function") renderChannels();
+        });
 }
 
 
@@ -1333,6 +1418,10 @@ function renderChannels() {
         name.className = "channelName";
         name.textContent = channel.name;
         textWrap.appendChild(name);
+        var program = document.createElement("span");
+        program.className = "channelProgram";
+        program.textContent = channel.currentProgram || (epgLoaded ? "Программа не найдена" : "Загрузка программы…");
+        textWrap.appendChild(program);
         item.appendChild(textWrap);
         var heart = document.createElement("span");
         heart.className = "channelFavoriteHeart";
@@ -1462,7 +1551,7 @@ function playChannel(index) {
     } else if (isTransportStream && window.mpegts && mpegts.isSupported()) {
         try {
             mpegtsPlayer = mpegts.createPlayer({type:"mpegts", url:url, isLive:true, cors:true, withCredentials:false}, {
-                enableWorker:true, enableStashBuffer:true, stashInitialSize:262144, liveBufferLatencyChasing:true
+                enableWorker:true, enableStashBuffer:true, stashInitialSize:1048576, liveBufferLatencyChasing:true
             });
             mpegtsPlayer.attachMediaElement(video);
             mpegtsPlayer.load();
@@ -1480,8 +1569,8 @@ function playChannel(index) {
     } else if ((isHls || !isDash) && window.Hls && Hls.isSupported()) {
         // Некоторые IPTV-серверы скрывают .m3u8 в URL, поэтому проверяем и адреса без расширения.
         hlsPlayer = new Hls({
-            enableWorker:true, lowLatencyMode:false, backBufferLength:30,
-            maxBufferLength:30, maxMaxBufferLength:60, maxBufferSize:41943040,
+            enableWorker:true, lowLatencyMode:false, backBufferLength:60,
+            maxBufferLength:90, maxMaxBufferLength:180, maxBufferSize:104857600,
             maxBufferHole:0.5, manifestLoadingMaxRetry:6, levelLoadingMaxRetry:6,
             fragLoadingMaxRetry:8, manifestLoadingRetryDelay:1000,
             levelLoadingRetryDelay:1000, fragLoadingRetryDelay:1000,
@@ -2149,7 +2238,51 @@ function restoreExcluded() {
         }
     }, true);
 })();
-/* ЗАПУСК */
+
+
+
+/* Android TV: компактные строки, текущая передача и читаемый фокус */
+body.tv-mode #channelList { padding:5px 8px 12px !important; }
+body.tv-mode .channel {
+    min-height:34px !important;
+    height:auto !important;
+    margin:2px 1px !important;
+    padding:5px 9px !important;
+    gap:7px !important;
+    border-width:1px !important;
+    border-radius:7px !important;
+}
+body.tv-mode .channelLogo {
+    width:26px !important;
+    height:26px !important;
+    flex:0 0 26px !important;
+    border-radius:6px !important;
+    font-size:11px !important;
+}
+body.tv-mode .channelLogo img { padding:2px !important; }
+body.tv-mode .channelName {
+    display:block !important;
+    margin:0 !important;
+    font-size:11px !important;
+    line-height:1.15 !important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+body.tv-mode .channelProgram {
+    display:block;
+    margin-top:2px;
+    color:#a9a3bd;
+    font-size:9px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+body.tv-mode .channel.active .channelProgram,
+body.tv-mode .channel.tv-focused .channelProgram { color:#ddd2ff; }
+body.tv-mode .channelFavoriteHeart { top:5px; right:7px; font-size:12px; }
+\n/* ЗАПУСК */
 
 fixScreenSize();
 
