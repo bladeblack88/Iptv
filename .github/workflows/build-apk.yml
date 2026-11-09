@@ -23,8 +23,8 @@ jobs:
 
       - name: Use the exact website home-screen icon
         run: |
-          mkdir -p app/src/main/res/drawable-nodpi
-          curl -fsSL "https://raw.githubusercontent.com/bladeblack88/Iptv/main/apple-touch-icon.png" -o app/src/main/res/drawable-nodpi/site_icon.png
+          mkdir -p app/src/main/res/mipmap-nodpi
+          curl -fsSL "https://raw.githubusercontent.com/bladeblack88/Iptv/main/apple-touch-icon.png" -o app/src/main/res/mipmap-nodpi/ic_launcher.png
 
       - name: Set up Java
         uses: actions/setup-java@v4
