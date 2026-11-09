@@ -732,9 +732,21 @@ window.addEventListener(
 
 function keepLandscapeLayout() {
     if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches) {
-        if (document.fullscreenElement && document.exitFullscreen) {
-            document.exitFullscreen().catch(function() {});
+        var fullscreenElement =
+            document.fullscreenElement ||
+            document.webkitFullscreenElement;
+
+        // Не закрываем полноэкранный интерфейс #app при смене ориентации.
+        if (fullscreenElement && fullscreenElement !== app) {
+            var exitFullscreen =
+                document.exitFullscreen ||
+                document.webkitExitFullscreen;
+            if (exitFullscreen) {
+                var result = exitFullscreen.call(document);
+                if (result && result.catch) result.catch(function() {});
+            }
         }
+
         if (video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
             video.webkitExitFullscreen();
         }
