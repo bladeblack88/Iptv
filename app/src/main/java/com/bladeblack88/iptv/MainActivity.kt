@@ -177,6 +177,10 @@ class MainActivity : Activity() {
                     var active = document.activeElement;
                     var pos = all.indexOf(active);
                     if (pos >= 0) return pos;
+                    // WebView may keep focus on the body while the visual TV focus
+                    // is represented only by the .tv-focused class.
+                    var visual = all.findIndex(function(el) { return el.classList.contains('tv-focused'); });
+                    if (visual >= 0) return visual;
                     var url = window.tvFocusedChannelUrl || (window.__apkSavedPlayerPosition || {}).focusUrl;
                     if (url && typeof channels !== 'undefined') {
                         return all.findIndex(function(el) {
@@ -227,7 +231,9 @@ class MainActivity : Activity() {
                     var all = items(), pos = currentPosition(all), target = all[pos];
                     if (!target) return;
                     if (target.classList.contains('channel-filter-entry')) {
-                        if (target.onclick) target.onclick.call(target);
+                        // Activate the pinned "Избранное / Все каналы" row
+                        // using the same click path as a real remote OK press.
+                        target.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
                         return;
                     }
                     var n = parseInt(target.getAttribute('data-index'), 10);
