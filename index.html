@@ -689,6 +689,7 @@ body.tv-mode.tv-video-fullscreen { overflow:hidden !important; }
 
         <video
             id="video"
+            tabindex="0"
             controls
             controlslist="nofullscreen noremoteplayback"
             playsinline
@@ -2122,6 +2123,7 @@ function restoreExcluded() {
         var items = channelItems();
         var active = document.activeElement;
         var inChannel = active && active.classList && active.classList.contains("channel");
+        var inVideo = active === video;
         var tvFullscreen = app.classList.contains("tv-video-fullscreen") ||
             document.fullscreenElement === video || !!video.webkitDisplayingFullscreen;
         if (tvFullscreen && (key === "Backspace" || key === "Escape" || code === 4)) {
@@ -2138,12 +2140,14 @@ function restoreExcluded() {
             event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex + 1 : 0);
         } else if (key === "ArrowUp" || code === 19) {
             event.preventDefault(); focusChannel(inChannel ? focusedChannelIndex - 1 : Math.max(0, items.length - 1));
-        } else if (key === "ArrowRight" && !inChannel) {
+        } else if (key === "ArrowRight" && inVideo) {
             event.preventDefault(); focusChannel(focusedChannelIndex);
         } else if (key === "ArrowLeft" && inChannel) {
             event.preventDefault();
-            var filter = document.getElementById("favoriteFilterButton");
-            if (filter) filter.focus();
+            if (activeUrl) video.focus();
+            else document.getElementById("favoriteFilterButton").focus();
+        } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inVideo) {
+            event.preventDefault(); toggleFullscreen();
         } else if ((key === "Enter" || key === " " || code === 23 || code === 66) && inChannel) {
             event.preventDefault(); active.click();
         } else if ((key === "Backspace" || key === "Escape" || code === 4) && inChannel) {
