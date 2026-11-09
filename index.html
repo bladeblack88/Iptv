@@ -980,36 +980,11 @@ video.addEventListener("click", function(event) {
 function enterTvFullscreen() {
     if (!document.body.classList.contains("tv-mode")) return;
 
-    // Встроенная веб-страница (официальный эфир) не является HTML5-видео.
-    // Запрос fullscreen у скрытого <video> в этом случае даёт чёрный экран.
-    if (officialPlayer && officialPlayer.style.display !== "none" && officialPlayer.src) {
-        app.classList.add("tv-video-fullscreen");
-        document.body.classList.add("tv-video-fullscreen");
-        return;
-    }
-
-    // Для HTML5-потоков используем нативный video custom view Android WebView.
-    // Если API отсутствует или отклоняет запрос, используем CSS-fullscreen.
-    try {
-        if (video.requestFullscreen) {
-            var request = video.requestFullscreen();
-            if (request && request.catch) {
-                request.catch(function() {
-                    app.classList.add("tv-video-fullscreen");
-                    document.body.classList.add("tv-video-fullscreen");
-                });
-            }
-            return;
-        }
-        if (video.webkitEnterFullscreen) {
-            video.webkitEnterFullscreen();
-            return;
-        }
-    } catch (e) {}
-
+    // Не вызываем native video fullscreen: на некоторых Android TV он
+    // оставляет звук, но скрывает аппаратную видеоповерхность (чёрный экран).
+    // CSS-режим не перезапускает поток и работает также для iframe-плеера.
     app.classList.add("tv-video-fullscreen");
     document.body.classList.add("tv-video-fullscreen");
-    try { video.focus(); } catch (e) {}
 }
 
 function exitTvFullscreen() {
@@ -2264,11 +2239,13 @@ function restoreExcluded() {
         var inPinned = inChannel && active.classList.contains("channel-filter-entry");
         var inVideo = active === video;
         var tvFullscreen = app.classList.contains("tv-video-fullscreen") || document.fullscreenElement === video || !!video.webkitDisplayingFullscreen;
-        if (tvFullscreen && (key === "Backspace" || key === "Escape" || code === 4)) {
-            event.preventDefault(); exitTvFullscreen(); return;
-        }
-        if (tvFullscreen && (key === "Enter" || key === " " || code === 23 || code === 66)) {
-            event.preventDefault(); exitTvFullscreen(); return;
+        // Любая кнопка пульта возвращает обычную раскладку:
+        // список каналов справа, продолжающее играть видео слева.
+        if (tvFullscreen) {
+            event.preventDefault();
+            exitTvFullscreen();
+            if (activeIndex >= 0) focusChannel(focusedChannelIndex);
+            return;
         }
         if (key === "ArrowUp" || code === 19) {
             event.preventDefault();
