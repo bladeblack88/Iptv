@@ -142,12 +142,15 @@ class RemoteControlInstrumentedTest {
 
     @Test
     fun movingRightFromPlayerToListDoesNotToggleFavorite() {
-        evaluate("""
-            document.body.tabIndex = 0;
-            document.body.focus();
-            true
-        """.trimIndent())
-        press(KeyEvent.KEYCODE_DPAD_RIGHT)
+        instrumentation.runOnMainSync { webView?.requestFocus() }
+        assertEquals("true", evaluate("""
+            (function() {
+              document.body.tabIndex = 0;
+              document.body.focus();
+              return document.activeElement === document.body;
+            })()
+        """.trimIndent()))
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT)
         assertEquals("0", evaluate("favoriteToggleCount"))
         assertEquals("0", evaluate("""
             Array.from(document.querySelectorAll('#channelList .channel'))
