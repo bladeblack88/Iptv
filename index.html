@@ -689,6 +689,7 @@ var showOnlyFavorites = false;
 var checking = false;
 var checkIndex = 0;
 var checkTimer = null;var checkVideo = null;
+var checkHls = null;
 
 var checkQueue = [];
 var checkWorking = 0;
@@ -1573,8 +1574,10 @@ function startAutoCheck() {
     checkVideo = document.createElement("video");
 
     checkVideo.muted = true;
-
-    checkVideo.preload = "none";
+    checkVideo.playsInline = true;
+    checkVideo.setAttribute("playsinline", "");
+    checkVideo.setAttribute("webkit-playsinline", "");
+    checkVideo.preload = "auto";
 
     checkNextChannel();
 
@@ -1585,139 +1588,123 @@ function startAutoCheck() {
 
 function checkNextChannel() {
 
-    if (!checking) {
-        return;
-    }
+    if (!checking) return;
 
     if (checkIndex >= checkQueue.length) {
-
         finishAutoCheck();
-
         return;
-
     }
 
     var channel = checkQueue[checkIndex];
-
     document.getElementById("status").textContent =
         "🔍 Проверка " + (checkIndex + 1) +
-        " из " + checkQueue.length +
-        ": " + channel.name;
+        " из " + checkQueue.length + ": " + channel.name;
 
     var finished = false;
 
-    function finish(status) {
-
-        if (finished || !checking) {
-            return;
-        }
-
+    function finish(status, reason) {
+        if (finished || !checking) return;
         finished = true;
 
         if (checkTimer) {
-
             clearTimeout(checkTimer);
-
             checkTimer = null;
-
         }
 
-        checkVideo.pause();
+        if (checkHls) {
+            checkHls.destroy();
+            checkHls = null;
+        }
 
-        checkVideo.removeAttribute("src");
-
-        checkVideo.load();
+        if (checkVideo) {
+            checkVideo.pause();
+            checkVideo.removeAttribute("src");
+            checkVideo.load();
+            checkVideo.onplaying = null;
+            checkVideo.oncanplay = null;
+            checkVideo.onerror = null;
+        }
 
         channel.checkStatus = status;
 
         if (status === "working") {
-
             checkWorking++;
-
-        }
-
-        else if (status === "failed") {
-
+        } else if (status === "failed") {
             checkFailed++;
-
-            // Удаляем сразу после ошибки
-
             excludeFailedChannel(channel);
-
-        }
-
-        else {
-
+        } else {
             checkUnverified++;
-
         }
 
         checkIndex++;
-
         renderChannels();
 
         checkTimer = setTimeout(function() {
-
             checkTimer = null;
-
             checkNextChannel();
-
-        }, 100);
-
+        }, 180);
     }
-
 
     checkVideo.onplaying = function() {
-
         finish("working");
-
     };
-
 
     checkVideo.onerror = function() {
-
-        finish("failed");
-
+        finish("failed", "Ошибка загрузки или декодирования");
     };
-
 
     checkVideo.oncanplay = function() {
-
         finish("working");
-
     };
 
-
-    // Тайм-аут проверки одного канала: 12 секунд
-
+    // Длинный тайм-аут не считается доказательством неисправности:
+    // сервер может отвечать медленно или временно ограничивать соединения.
     checkTimer = setTimeout(function() {
+        finish("unverified", "Истекло время ожидания");
+    }, 25000);
 
-        finish("failed");
+    var isHlsUrl = /\\.m3u8(?:$|\\?)/i.test(channel.url);
 
-    }, 12000);
+    // На браузерах с поддержкой MSE проверяем HLS через hls.js,
+    // а на iOS Safari используем встроенный HLS декодер.
+    if (isHlsUrl && window.Hls && Hls.isSupported()) {
+        checkHls = new Hls({
+            enableWorker: false,
+            lowLatencyMode: false,
+            manifestLoadingTimeOut: 15000,
+            levelLoadingTimeOut: 15000,
+            fragLoadingTimeOut: 15000,
+            manifestLoadingMaxRetry: 1,
+            levelLoadingMaxRetry: 1,
+            fragLoadingMaxRetry: 1
+        });
 
-
-    checkVideo.src = channel.url;
-
-    try {
-
-        var promise = checkVideo.play();
-
-        if (promise && promise.catch) {
-
-            promise.catch(function() {
-
-                finish("failed");
-            });
-
-        }
-
-    } catch (e) {
-
-        finish("failed");
-
+        var currentCheckHls = checkHls;
+        currentCheckHls.attachMedia(checkVideo);
+        currentCheckHls.on(Hls.Events.MEDIA_ATTACHED, function() {
+            if (checkHls === currentCheckHls && !finished) {
+                currentCheckHls.loadSource(channel.url);
+            }
+        });
+        currentCheckHls.on(Hls.Events.ERROR, function(event, data) {
+            if (checkHls !== currentCheckHls || finished || !data.fatal) return;
+            finish("failed", data.details || data.type || "Ошибка HLS");
+        });
+    } else {
+        checkVideo.src = channel.url;
+        checkVideo.load();
     }
 
+    // Отказ play() из-за ограничений автозапуска Safari не означает,
+    // что сам поток неисправен. Ожидаем canplay/error или тайм-аут.
+    try {
+        var playPromise = checkVideo.play();
+        if (playPromise && playPromise.catch) {
+            playPromise.catch(function() {});
+        }
+    } catch (e) {
+        // Продолжаем проверку по событиям media element.
+    }
 }
 
 
@@ -1733,6 +1720,11 @@ function finishAutoCheck() {
 
         checkTimer = null;
 
+    }
+
+    if (checkHls) {
+        checkHls.destroy();
+        checkHls = null;
     }
 
     if (checkVideo) {
