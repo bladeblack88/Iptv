@@ -416,6 +416,9 @@ button:disabled { opacity:.35; }
 }
 #search::-webkit-input-placeholder { color:#77758f; }
 @media screen and (orientation: portrait) {
+    /* На телефонах видео заполняет всю область плеера без пустых полос */
+    #video { object-fit: cover !important; width:100%; height:100%; min-height:0; flex:1 1 auto; }
+    #officialPlayer { width:100%; height:100%; min-height:0; flex:1 1 auto; }
     #left { width:100%; height:48%; padding:12px; gap:5px; }
     #right { width:100%; height:52%; border-left:0; border-top:1px solid var(--line); }
     .brandbar { min-height:39px; padding-bottom:5px; }
