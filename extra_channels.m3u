@@ -34,11 +34,11 @@ https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_EXPRESS/variant.m3u8
 #EXTINF:-1 tvg-logo="./logos/nash-dom.svg" group-title="Региональные",Наш Дом (Пенза)
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R03_NASHDOM/variant.m3u8
-#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/russia1.svg" tvg-id="russia1" group-title="Федеральные",Россия 1 — NGENIX
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:Redirect/file/Russia-1.svg" tvg-id="russia1" group-title="Федеральные",Россия 1 — NGENIX
 https://zabava-htlive.cdn.ngenix.net/hls/CH_RUSSIA1_7/variant.m3u8
-#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/ren-tv.svg" tvg-id="rentv" group-title="Федеральные",РЕН ТВ — NGENIX
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:Redirect/file/REN_TV_logo_2017.svg" tvg-id="rentv" group-title="Федеральные",РЕН ТВ — NGENIX
 https://zabava-htlive.cdn.ngenix.net/hls/CH_RENTV/variant.m3u8
-#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/5tv.svg" tvg-id="5tv" group-title="Федеральные",Пятый канал — NGENIX
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:Redirect/file/5-tv_logo_%282023%29.svg" tvg-id="5tv" group-title="Федеральные",Пятый канал — NGENIX
 https://zabava-htlive.cdn.ngenix.net/hls/CH_5TV/variant.m3u8
-#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/tv3.svg" tvg-id="tv3" group-title="Федеральные",ТВ-3 — NGENIX
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:Redirect/file/%D0%A2V3_logo_2023.svg" tvg-id="tv3" group-title="Федеральные",ТВ-3 — NGENIX
 https://zabava-htlive.cdn.ngenix.net/hls/CH_TV3/variant.m3u8
