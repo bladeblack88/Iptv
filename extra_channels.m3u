@@ -34,8 +34,6 @@ https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_EXPRESS/variant.m3u8
 #EXTINF:-1 tvg-logo="./logos/nash-dom.svg" group-title="Региональные",Наш Дом (Пенза)
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R03_NASHDOM/variant.m3u8
-#EXTINF:-1 tvg-logo="./logos/1tv.svg" tvg-id="1tv" group-title="Федеральные",Первый канал — NGENIX
-https://zabava-htlive.cdn.ngenix.net/hls/CH_1TV_7/variant.m3u8
 #EXTINF:-1 tvg-logo="./logos/russia1.svg" tvg-id="russia1" group-title="Федеральные",Россия 1 — NGENIX
 https://zabava-htlive.cdn.ngenix.net/hls/CH_RUSSIA1_7/variant.m3u8
 #EXTINF:-1 tvg-logo="./logos/ren-tv.svg" tvg-id="rentv" group-title="Федеральные",РЕН ТВ — NGENIX
