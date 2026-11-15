@@ -337,8 +337,12 @@ body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
     background:linear-gradient(135deg,#7654df,#5937bd);
     font-size:10px; font-weight:800; white-space:nowrap;
 }
-@media screen and (orientation: portrait) {
-    .android-download { padding:6px 8px; font-size:9px; }
+@media screen and (max-width: 900px) and (orientation: portrait) {
+    body.android-phone .android-download {
+        display:inline-flex;
+        padding:6px 8px;
+        font-size:9px;
+    }
 }
 
 #video {
@@ -869,10 +873,11 @@ body.tv-mode .channelFavoriteHeart { top:5px; right:7px; font-size:12px; }
 
 <script>
 
-// Кнопка загрузки APK видна на Android и в портретной, и в горизонтальной ориентации.
-if (/Android/i.test(navigator.userAgent)) {
-    var androidDownload = document.getElementById("androidDownload");
-    if (androidDownload) androidDownload.style.display = "inline-flex";
+// Кнопка APK показывается только на Android-смартфоне в вертикальной ориентации.
+if (/Android/i.test(navigator.userAgent) &&
+    /Mobile/i.test(navigator.userAgent) &&
+    !/Android TV|GoogleTV|SmartTV|SMART-TV|Tizen|Web0S|WebOS|HbbTV|NetCast/i.test(navigator.userAgent)) {
+    document.body.classList.add("android-phone");
 }
 
 
