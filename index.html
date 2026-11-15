@@ -1271,7 +1271,7 @@ function loadPlaylist() {
 /* Подмешиваем дополнительный список, не заменяя основной каталог. */
 function loadAdditionalPlaylist(baseChannels, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "./extra_channels.m3u?v=20261115-sts-top", true);
+    xhr.open("GET", "./extra_channels.m3u?v=20261116-federal-restore", true);
     xhr.timeout = 12000;
     xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
@@ -1292,15 +1292,25 @@ function loadAdditionalPlaylist(baseChannels, callback) {
             seenNames[normalizeName(channel.name)] = true;
         });
         var added = 0;
+        var priorityExtras = [];
         extras.forEach(function(channel) {
             var key = normalizeName(channel.name);
             if (!seenUrls[channel.url] && key && !seenNames[key]) {
                 seenUrls[channel.url] = true;
                 seenNames[key] = true;
-                merged.push(channel);
+                priorityExtras.push(channel);
                 added++;
             }
         });
+        // Федеральные каналы из дополнительного списка ставим сразу после «Чо».
+        var choIndex = merged.findIndex(function(channel) {
+            return normalizeName(channel.name) === "чо";
+        });
+        if (choIndex >= 0) {
+            merged.splice.apply(merged, [choIndex + 1, 0].concat(priorityExtras));
+        } else {
+            merged = merged.concat(priorityExtras);
+        }
         // Закрепляем ТНТ в самом начале общего списка, перед каналами основного плейлиста.
         var tntIndex = merged.findIndex(function(channel) {
             return /тнт/i.test(channel.name || "") || channel.tvgId === "TNT.ru@SD";
