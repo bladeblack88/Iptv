@@ -1,6 +1,10 @@
 #EXTM3U
 #EXTINF:-1 tvg-logo="./logos/tnt.svg" tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ — Ростелеком (Пенза)
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_TNT/variant.m3u8?version=2
+#EXTINF:-1 tvg-id="Express.ru@HD" group-title="Региональные",Экспресс HD (Пенза)
+https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_EXPRESS/variant.m3u8
+#EXTINF:-1 tvg-id="NashDom.ru@SD" group-title="Региональные",Наш Дом (Пенза)
+https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R03_NASHDOM/variant.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru@SD" group-title="Федеральные",СТС
 https://zabava-htlive.cdn.ngenix.net/hls/CH_STS/variant.m3u8
 #EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/russia1.svg" tvg-id="Russia1.ru@SD" group-title="Федеральные",Россия 1
