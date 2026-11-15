@@ -637,6 +637,34 @@ body.ios-simulated-fullscreen {
 }
 
 
+/* Горизонтальный телефон: заставка точно совпадает с областью видео */
+@media screen and (max-width: 900px) and (orientation: landscape) {
+    #left {
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    #video {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        flex: 1 1 auto !important;
+        object-fit: cover !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+    #playerWelcome {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-sizing: border-box !important;
+    }
+}
+
 /* Исправление мобильной заставки: закрывает всю область плеера без верхних и нижних щелей */
 @media screen and (max-width: 900px) and (orientation: portrait) {
     #left { position:relative; overflow:hidden; }
