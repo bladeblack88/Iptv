@@ -1,3 +1,13 @@
 #EXTM3U
 #EXTINF:-1 tvg-logo="./logos/tnt.svg" tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ — Ростелеком (Пенза)
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_TNT/variant.m3u8?version=2
+#EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru@SD" group-title="Федеральные",СТС
+https://zabava-htlive.cdn.ngenix.net/hls/CH_STS/variant.m3u8
+#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/russia1.svg" tvg-id="Russia1.ru@SD" group-title="Федеральные",Россия 1
+https://zabava-htlive.cdn.ngenix.net/hls/CH_RUSSIA1_7/variant.m3u8
+#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/ren-tv.svg" tvg-id="REN.ru@SD" group-title="Федеральные",РЕН ТВ
+https://zabava-htlive.cdn.ngenix.net/hls/CH_RENTV/variant.m3u8
+#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/5tv.svg" tvg-id="5TV.ru@SD" group-title="Федеральные",Пятый канал
+https://zabava-htlive.cdn.ngenix.net/hls/CH_5TV/variant.m3u8
+#EXTINF:-1 tvg-logo="https://bladeblack88.github.io/Iptv/logos/tv3.svg" tvg-id="TV3.ru@SD" group-title="Федеральные",ТВ-3
+https://zabava-htlive.cdn.ngenix.net/hls/CH_TV3/variant.m3u8
