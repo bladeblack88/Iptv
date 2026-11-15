@@ -1198,11 +1198,13 @@ function loadPlaylist() {
                 var parsed = body.indexOf("#EXTM3U") !== -1 ? parseM3U(body) : [];
                 if (parsed.length > 0) {
                     stopAutoCheck();
-                    channels = parsed;
-                    removeExcludedFromPlaylist();
-
-                    document.getElementById("status").textContent =
-                        "Загружено каналов: " + channels.length;
+                    loadAdditionalPlaylist(parsed, function(merged, addedCount) {
+                        channels = merged;
+                        removeExcludedFromPlaylist();
+                        document.getElementById("status").textContent =
+                            "Загружено каналов: " + channels.length +
+                            (addedCount ? " (добавлено: " + addedCount + ")" : "");
+                    });
                     return;
                 }
                 tryNextSource("Плейлист пустой или имеет неверный формат");
@@ -1218,6 +1220,46 @@ function loadPlaylist() {
 
     document.getElementById("status").textContent = "Загружаем список телеканалов…";
     tryNextSource("");
+}
+
+/* Подмешиваем дополнительный список, не заменяя основной каталог. */
+function loadAdditionalPlaylist(baseChannels, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "./extra_channels.m3u?v=20261115-1", true);
+    xhr.timeout = 12000;
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status !== 200) {
+            callback(baseChannels, 0);
+            return;
+        }
+        var extras = parseM3U(xhr.responseText || "");
+        var merged = baseChannels.slice();
+        var seenUrls = Object.create(null);
+        var seenNames = Object.create(null);
+        function normalizeName(value) {
+            return String(value || "").toLocaleLowerCase("ru")
+                .replace(/[ё]/g, "е").replace(/[^\p{L}\p{N}]+/gu, "");
+        }
+        merged.forEach(function(channel) {
+            seenUrls[channel.url] = true;
+            seenNames[normalizeName(channel.name)] = true;
+        });
+        var added = 0;
+        extras.forEach(function(channel) {
+            var key = normalizeName(channel.name);
+            if (!seenUrls[channel.url] && key && !seenNames[key]) {
+                seenUrls[channel.url] = true;
+                seenNames[key] = true;
+                merged.push(channel);
+                added++;
+            }
+        });
+        callback(merged, added);
+    };
+    xhr.onerror = function() { callback(baseChannels, 0); };
+    xhr.ontimeout = function() { callback(baseChannels, 0); };
+    xhr.send(null);
 }
 
 /* РАЗБОР M3U */
