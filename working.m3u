@@ -1,5 +1,5 @@
 #EXTM3U
-#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/%D0%A7%D0%B5%21_%282020%29.png" tvg-id="Che.ru@SD" group-title="Entertainment",Че!
+#EXTINF:-1 tvg-logo="https://upload.wikimedia.org/wikipedia/commons/2/27/%D0%A7%D0%B5%21_%282020%29.png" tvg-id="Che.ru@SD" group-title="Entertainment",Че!
 https://zabava-htlive.cdn.ngenix.net/hls/CH_PERETZ/variant.m3u8
 #EXTINF:-1 tvg-id="1HDMusicTelevision.ru@HD" tvg-logo="https://i.imgur.com/4Ww7CsR.png" group-title="Music",1HD Music Television (1080p)
 http://176.118.197.101/1HD/index.m3u8
