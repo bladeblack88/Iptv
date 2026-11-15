@@ -27,11 +27,9 @@ https://streaming.astrakhan.ru/astrakhan24/playlist.m3u8
 https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
 #EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ
 http://stream.mcquack.net/135/index.m3u8
-#EXTINF:-1 tvg-id="TNT.ru@HD" group-title="Федеральные",ТНТ HD (UMA Media)
-https://bl.uma.media/live/317850/HLS/4614144_3/2/1/playlist.m3u8
-#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (DMI3Y)
-http://dmi3y-tv.ru/hls/T2/CH_TNT.m3u8
-#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (KTKRU)
-http://iptv.ktkru.ru:8019/index.m3u8
-#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (Точка)
-https://streaming.televizor-24-tochka.ru/live/23.m3u8
+#EXTINF:-1 tvg-id="TNT.ru@HD" group-title="Федеральные",ТНТ HD (CDNVideo)
+https://okkotv-live.cdnvideo.ru/channel/TNT_OTT_HD.m3u8
+#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (Bonus TV)
+http://cdn-01.bonus-tv.ru/tntott/tracks-v1a1/mono.m3u8
+#EXTINF:-1 tvg-id="TNT.ru@HD" group-title="Федеральные",ТНТ HD (NGENIX)
+https://zabava-htlive.cdn.ngenix.net/hls/CH_TNTHD/variant.m3u8
