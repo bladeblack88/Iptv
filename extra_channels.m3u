@@ -1,0 +1,105 @@
+#EXTM3U
+#EXTINF:-1 group-title="Федеральные",Первый канал
+https://edge1.1internet.tv/dash-live2/streams/1tv-dvr/1tvdash.mpd
+#EXTINF:-1 group-title="Федеральные",Россия 1 HD
+https://live.smotrim.ru/vgtrk/0/russia1-hd/index.m3u8
+#EXTINF:-1 group-title="Федеральные",Россия 24 HD
+https://live.smotrim.ru/vgtrk/0/russia24-hd/index.m3u8
+#EXTINF:-1 group-title="Федеральные",Россия 24
+https://stream.smotrim.ru/hls2/russia24nl_smotrim/playlist_5.m3u8
+#EXTINF:-1 group-title="Федеральные",Россия Культура HD
+https://live.smotrim.ru/vgtrk/0/kultura-hd/index.m3u8
+#EXTINF:-1 group-title="Федеральные",НТВ
+https://ntv-hls.cdnvideo.ru/ntv/ntv_live/playlist.m3u8
+#EXTINF:-1 group-title="Федеральные",Пятый канал
+https://5tv-hls.cdnvideo.ru/5tv/5tv/playlist.m3u8
+#EXTINF:-1 group-title="Федеральные",ТВ Центр
+https://tvc-hls.cdnvideo.ru/tvc-res/smil:vd9221.smil/playlist.m3u8
+#EXTINF:-1 group-title="Федеральные",РЕН ТВ
+https://ren.tv/player/stream.m3u8
+#EXTINF:-1 group-title="Федеральные",РБК-ТВ
+http://online-video.rbc.ru/online2/rbctv.m3u8
+#EXTINF:-1 group-title="Федеральные",ОТР
+https://otr-online.ru/player/stream.m3u8
+#EXTINF:-1 group-title="Федеральные",Звезда
+https://tvchannelstream1.tvzvezda.ru/cdn/tvzvezda/playlist.m3u8
+#EXTINF:-1 group-title="Федеральные",Мир
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv_2500/playlist.m3u8
+#EXTINF:-1 group-title="Федеральные",Мир 24
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mir24_2500/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные",СТС
+https://ctc-hls.cdnvideo.ru/ctc/ctc/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные",ТНТ
+https://tnt-hls.cdnvideo.ru/tnt/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные",Домашний
+https://domashniy-hls.cdnvideo.ru/domashniy/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные",Пятница!
+https://friday-hls.cdnvideo.ru/friday/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные",ТВ-3
+https://tv3-hls.cdnvideo.ru/tv3/playlist.m3u8
+#EXTINF:-1 group-title="Музыка",Муз-ТВ
+https://muztv-hls.cdnvideo.ru/muztv/playlist.m3u8
+#EXTINF:-1 group-title="Кино",Русский роман
+http://31.148.48.15/Russkiy_Roman_HD/index.m3u8
+#EXTINF:-1 group-title="Кино",Русский детектив
+http://stream.mcquack.net/204/index.m3u8
+#EXTINF:-1 group-title="Кино",Русский бестселлер
+http://stream.mcquack.net/208/index.m3u8
+#EXTINF:-1 group-title="Кино",Star Cinema
+https://dash2.antik.sk/live/test_star_cinema_atktv/playlist.m3u8
+#EXTINF:-1 group-title="Кино",Star Family
+https://dash2.antik.sk/live/test_star_family_atktv/playlist.m3u8
+#EXTINF:-1 group-title="Кино",START Air
+https://livetv.mylifeisgood.net.ru/channels/strwc.m3u8
+#EXTINF:-1 group-title="Развлекательные",Мужской
+https://s1.merlive.am/mujskoy/index.m3u8
+#EXTINF:-1 group-title="Детские",Рыжий
+https://stream8.cinerama.uz/1407/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Детские",Солнце
+https://tv.mediacdn.ru/live/solntse/playlist.m3u8
+#EXTINF:-1 group-title="Музыка",RU.TV
+https://hls-03-video.webcaramba.com/rutv/live.m3u8
+#EXTINF:-1 group-title="Музыка",Russian MusicBox
+https://livetv.mylifeisgood.net.ru/channels/rusmusicbox.m3u8
+#EXTINF:-1 group-title="Музыка",SONG TV Russia
+https://songtv.hls.iptvdc.com/web-russia/index.m3u8
+#EXTINF:-1 group-title="Музыка",Шансон ТВ
+http://hls.shansontv.cdnvideo.ru/shansontv/shansontv.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Региональные",Первый Крымский
+https://live1.1tvcrimea.ru/1tvcrimea.m3u8
+#EXTINF:-1 group-title="Региональные",Симферополь 24
+https://simf.1tvcrimea.ru/simferopol24.m3u8
+#EXTINF:-1 group-title="Региональные",Сочи 24
+http://serv30.vintera.tv:8081/sochi/sochi24_tv/playlist.m3u8
+#EXTINF:-1 group-title="Региональные",Самара ГИС
+https://tv.samaragis.ru/new/new/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Региональные",ТВК 24
+https://air.tvk6.ru/tvk24/playlist.m3u8
+#EXTINF:-1 group-title="Региональные",Прима
+https://tele2dvrnat01-02.cdnvideo.ru/stream/NAT_Prima/hls/index.m3u8
+#EXTINF:-1 group-title="Познавательные",RTG TV HD
+https://stream.mcquack.net/164/index.m3u8
+#EXTINF:-1 group-title="Познавательные",Рыболов
+http://stream.mcquack.net/264/index.m3u8
+#EXTINF:-1 group-title="Познавательные",Спас
+https://tvspas.mediacdn.ru/cdn/spas/playlist.m3u8
+#EXTINF:-1 group-title="Познавательные",Союз
+https://hls-tvsoyuz.cdnvideo.ru/tvsoyuz/soyuz/playlist.m3u8
+#EXTINF:-1 group-title="Познавательные",РЖД ТВ
+http://hls.tva.cdnvideo.ru/tva/tvahd.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Познавательные",Shopping Live
+https://nonmirya7cc.a.trbcdn.net/livemaster/tzrz5_sazlypl5ot.smil/playlist.m3u8
+#EXTINF:-1 group-title="Новости",Известия
+http://igi-hls.cdnvideo.ru/igi/igi_tcode/playlist.m3u8
+#EXTINF:-1 group-title="Познавательные",Большая Азия
+http://live-bigasia.cdnvideo.ru/bigasia/bigasia.smil/playlist.m3u8
+#EXTINF:-1 group-title="Новости",360°
+https://video1.in-news.ru/360/index.m3u8
+#EXTINF:-1 group-title="Детские",Мультимания
+https://sirius.greenhosting.ru/MultimaniaRu/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Познавательные",Надежда
+https://live-tvhope.cdnvideo.ru/tvhope-pull/tvhope_1/playlist.m3u8
+#EXTINF:-1 group-title="Региональные",Астрахань 24
+https://streaming.astrakhan.ru/astrakhan24/playlist.m3u8
+#EXTINF:-1 group-title="Региональные",НВК Саха
+https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
