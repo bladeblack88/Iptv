@@ -1255,6 +1255,13 @@ function loadAdditionalPlaylist(baseChannels, callback) {
                 added++;
             }
         });
+        // Закрепляем ТНТ в самом начале общего списка, перед каналами основного плейлиста.
+        var tntIndex = merged.findIndex(function(channel) {
+            return /тнт/i.test(channel.name || "") || channel.tvgId === "TNT.ru@SD";
+        });
+        if (tntIndex > 0) {
+            merged.unshift(merged.splice(tntIndex, 1)[0]);
+        }
         callback(merged, added);
     };
     xhr.onerror = function() { callback(baseChannels, 0); };
