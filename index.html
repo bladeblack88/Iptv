@@ -1228,7 +1228,7 @@ function loadPlaylist() {
 /* Подмешиваем дополнительный список, не заменяя основной каталог. */
 function loadAdditionalPlaylist(baseChannels, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "./extra_channels.m3u?v=20261115-che-logo", true);
+    xhr.open("GET", "./extra_channels.m3u?v=20261115-sts-top", true);
     xhr.timeout = 12000;
     xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
