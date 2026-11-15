@@ -29,6 +29,6 @@ https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_EXPRESS/variant.m3u8
 #EXTINF:-1 tvg-logo="https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/69/29/a4/6929a472-3347-e6ef-7adc-3b9010abe62e/AppIcon-1x_U007emarketing-0-7-0-0-85-220.png/512x512bb.webp" group-title="Региональные",Наш Дом (Пенза)
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R03_NASHDOM/variant.m3u8
-#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ — Ростелеком (Пенза)
+#EXTINF:-1 tvg-id="TNT.ru@SD" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/0/0c/Logo_tnt.png" group-title="Федеральные",ТНТ — Ростелеком (Пенза)
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_TNT/variant.m3u8?version=2
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_TNT/variant.m3u8?version=2
