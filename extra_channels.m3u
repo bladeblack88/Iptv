@@ -3,14 +3,7 @@
 https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_TNT/variant.m3u8?version=2
 #EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru" group-title="Федеральные",СТС — Ростелеком (NGENIX)
 https://zabava-htlive.cdn.ngenix.net/hls/CH_STS/variant.m3u8
-#EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru" group-title="Федеральные",СТС — Ростелеком (региональный R02)
-http://95.107.47.198:8802/hls/CH_R02_STS/variant.m3u8?version=2
-#EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru" group-title="Федеральные",СТС — ID-TV Казахстан
-https://sc.id-tv.kz/STS_34_35.m3u8
-#EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru" group-title="Федеральные",СТС — поток 31.148
-http://31.148.48.15/STS/index.m3u8
-#EXTINF:-1 tvg-logo="https://i.imgur.com/ilUzAeb.png" tvg-id="STS.ru" group-title="Федеральные",СТС — поток 45.153
-http://45.153.24.78/STS/index.m3u8
+https://zabava-htlive.cdn.ngenix.net/hls/CH_STS/variant.m3u8
 #EXTINF:-1 tvg-logo="./logos/russia-k.svg" group-title="Федеральные",Россия Культура HD
 https://live.smotrim.ru/vgtrk/0/kultura-hd/index.m3u8
 #EXTINF:-1 tvg-logo="./logos/mir.svg" group-title="Федеральные",Мир
