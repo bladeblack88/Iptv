@@ -1,5 +1,5 @@
 #EXTM3U
-#EXTINF:-1 tvg-id="Peretz.ru@SD" group-title="Entertainment",Перец
+#EXTINF:-1 tvg-id="Peretz.ru@SD" group-title="Entertainment",Чо
 https://zabava-htlive.cdn.ngenix.net/hls/CH_PERETZ/variant.m3u8
 #EXTINF:-1 tvg-id="3ABNRussia.ru@SD" tvg-logo="https://i.imgur.com/4fhBbam.png" group-title="Religious",3ABN Russia (720p)
 https://hls.tv.3angels.ru/stream.m3u8
