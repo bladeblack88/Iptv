@@ -1,0 +1,24 @@
+name: Check IPTV streams
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/check_all_playlists.py"
+      - ".github/workflows/check-playlists.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Probe existing playlists
+        run: python scripts/check_all_playlists.py
