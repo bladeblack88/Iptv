@@ -33,3 +33,11 @@ https://okkotv-live.cdnvideo.ru/channel/TNT_OTT_HD.m3u8
 http://cdn-01.bonus-tv.ru/tntott/tracks-v1a1/mono.m3u8
 #EXTINF:-1 tvg-id="TNT.ru@HD" group-title="Федеральные",ТНТ HD (NGENIX)
 https://zabava-htlive.cdn.ngenix.net/hls/CH_TNTHD/variant.m3u8
+#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (+2) — Zabava
+https://zabava-htlive.cdn.ngenix.net/hls/CH_TNT_2/bw2000000/variant.m3u8?version=2
+#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (+4) — Zabava
+https://zabava-htlive.cdn.ngenix.net/hls/CH_TNT_4/bw2000000/variant.m3u8?version=2
+#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ (+7) — Zabava
+https://zabava-htlive.cdn.ngenix.net/hls/CH_TNT_7/bw2000000/variant.m3u8?version=2
+#EXTINF:-1 tvg-id="TNT.ru@SD" group-title="Федеральные",ТНТ — Ростелеком (Пенза)
+https://rt-vlg-penza-htlive.cdn.ngenix.net/hls/CH_R01_TNT/variant.m3u8?version=2
